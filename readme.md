@@ -43,17 +43,17 @@
 
 登录完毕请点击下方的"登录阿里云盘"，按照提示扫码登录
 
-<img src="https://pan.biubush.cn/d/img/login.png" >
+![](https://pan.biubush.cn/d/img/login.png)
 
 ### 添加任务
 
 点击搜索栏左侧的添加按钮，添加你的订阅
 
-<img src="https://pan.biubush.cn/d/img/addbtn.png" >
+![](https://pan.biubush.cn/d/img/addbtn.png)
 
 按照提示填写信息（注意，选中文件夹后务必点击选中按钮）
 
-<img src="https://pan.biubush.cn/d/img/addsub.png" >
+![](https://pan.biubush.cn/d/img/addsub.png)
 
 > 注意:即时测试按钮的作用是在你不确定自己的订阅是否有效时，即时运行一遍，给予你是否可用的反馈。
 
@@ -72,7 +72,7 @@
 
 首次启动程序将进行初始化配置，请注意按要求进行填写信息
 
-<img src="https://pan.biubush.cn/d/img/startup1.png" >
+![](https://pan.biubush.cn/d/img/startup1.png)
 
 注意，alys不允许你使用默认的管理员密码admin，为保障安全请务必更改
 
@@ -80,17 +80,17 @@
 
 初始化完毕后按照提示重新运行后台程序
 
-<img src="https://pan.biubush.cn/d/img/startup2.png" >
+![](https://pan.biubush.cn/d/img/startup2.png)
 
 ### 管理后台
 
 使用你的管理员账户登录，即可进入后台页面：
 
-<img src="https://pan.biubush.cn/d/img/adminlog.png" >
+![](https://pan.biubush.cn/d/img/adminlog.png)
 
 你可以清晰看到用户的每一步敏感操作
 
-<img src="https://pan.biubush.cn/d/img/manager.png" >
+![](https://pan.biubush.cn/d/img/manager.png)
 
 你可以查看并管理用户的状态，控制其阿里云盘是否登录，封禁和解封，删除该用户
 
