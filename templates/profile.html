@@ -1,0 +1,123 @@
+{% extends "model.html" %}
+{% block title %}个人资料{% endblock %}
+{% block content %}
+<div>
+
+    <form action="/profile" method="post">
+        <div class="form-floating mb-3">
+            <input maxlength="15" minlength="2" required type="text" class="form-control" value="{{user.nickname}}"
+                name="nickname" id="nknm" placeholder="昵称">
+            <label for="nknm"><i class="bi bi-balloon-heart-fill"></i>昵称</label>
+        </div>
+        <div class="form-floating mb-3">
+            <input maxlength="15" minlength="3" required readonly type="text" value="{{user.username}}"
+                class="form-control" name="username" id="usn" placeholder="用户名">
+            <label for="usn"><i class="bi bi-person-circle"></i>用户名(禁止更改)</label>
+        </div>
+        <div class="form-floating mb-3">
+            <input maxlength="40" required readonly type="email" value="{{user.mail}}" class="form-control" name="email"
+                id="email" placeholder="邮箱">
+            <label for="email"><i class="bi bi-envelope"></i>邮箱(禁止更改)</label>
+        </div>
+        <div class="form-floating">
+            <input maxlength="40" minlength="6" required type="password" class="form-control" name="password" id="psw"
+                placeholder="密码">
+            <label for="psw"><i class="bi bi-lock-fill"></i>密码</label>
+        </div>
+        <br>
+        <div class="form-floating">
+            <input maxlength="40" minlength="6" required type="password" class="form-control" name="vpassword" id="vpsw"
+                placeholder="确认密码">
+            <label for="vpsw"><i class="bi bi-lock-fill"></i>确认密码</label>
+        </div>
+        <div class="text-start">
+            <p id="confirmpsw"><small></small></p>
+        </div>
+        <div class="input-group">
+            <input maxlength="5" required type="number" class="form-control" name="vcode" id="vcode" placeholder="验证码">
+            <button class="btn btn-outline-dark" id="sendVcode"><i class="bi bi-send"></i>发送验证码</button>
+        </div>
+        <br>
+        <div class="row">
+            <div class="col"></div>
+            <div class="col-lg-8">
+                <div class="row text-center">
+                    <div class="btn-group">
+                        <button id="registerbtn" class="btn btn-outline-dark" type="submit"><i
+                                class="bi bi-vector-pen"></i>更改</button>
+                        <button class="btn btn-outline-dark" type="button"
+                            onclick="event.preventDefault();window.history.go(-1);"><i class="bi bi-arrow-90deg-left"></i>
+                            返回</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col"></div>
+        </div>
+    </form>
+</div>
+<script>
+    $(document).ready(function () {
+        function vpswd() {
+            let password = $('#psw').val();
+            let vpassword = $('#vpsw').val();
+            if (password != vpassword) {
+                $("#confirmpsw").css("color", "red");
+                $("#confirmpsw").text("两次密码输入不一致");
+            } else {
+                $("#confirmpsw").css("color", "green");
+                $("#confirmpsw").text("密码验证成功！");
+            }
+        }
+        function counttime() {
+            $("#sendVcode").text('已发送')
+            $('#email').attr('readonly', true)
+            second = 60
+            t1 = setInterval(freshBtn, 1000)
+        }
+        function freshBtn() {
+            second = second - 1
+            $("#sendVcode").text(String(second) + "秒后重发")
+            if (second == 0) {
+                $("#sendVcode").removeAttr("disabled")
+                $("#sendVcode").text('重新发送')
+                $("#email").removeAttr("readonly")
+                clearInterval(t1)
+            }
+        }
+        $('#psw').keyup(function () {
+            vpswd();
+        });
+        $('#vpsw').keyup(function () {
+            vpswd();
+        });
+        $("#sendVcode").click(function () {
+            $("#sendVcode").attr("disabled", true);
+            event.preventDefault();
+            let mailAdress = $("#email").val()
+            let verifyMail = $("#confirmmail").text()
+            if (mailAdress == "") {
+                alert('邮箱为空');
+                $("#sendVcode").removeAttr("disabled");
+            } else if (verifyMail == "邮箱格式不正确") {
+                alert("邮箱格式非法");
+                $("#sendVcode").removeAttr("disabled");
+            } else {
+                let rawdata = {
+                    "mailAdress": mailAdress
+                }
+                let subdata = JSON.stringify(rawdata)
+                $.ajax({
+                    type: "POST",
+                    url: '/sendcode',
+                    contentType: "application/json",
+                    dataType: "json",
+                    data: subdata,
+                    success: function (res) {
+                        counttime();
+                    }
+                })
+            }
+        });
+    });
+</script>
+{% endblock %}

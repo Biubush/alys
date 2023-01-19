@@ -1,0 +1,178 @@
+<head>
+    <title>编辑任务</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="../static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../static/img/icons/bootstrap-icons.css" rel="stylesheet">
+    <script src="../static/js/bootstrap.bundle.min.js"></script>
+    <script src="../static/js/jquery.min.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        {% for message in messages %}
+        <script>alert("{{message}}")</script>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+    </div>
+    <form action="/edittask" method="post" id="editform">
+        <input required type="text" class="form-control d-none" name="old_name" id="old_name"
+            placeholder="old_name" id="old_name" value="{{task.name}}">
+        <div class="row">
+            <p>1.保存至哪个文件夹</p>
+        </div>
+        <div class="row text-small">
+            <p><small>(若不更改则仍保存在【{{task.folder_name}}】中)</small></p>
+        </div>
+        <div class="container text-center">
+            <iframe src="/folder" id="folderframe" style="height: 350px;overflow-y: scroll;"></iframe>
+        </div>
+        <div class="row">
+            <div class="btn-group col-10 offset-1">
+                <button id="selectbtn" class="btn btn-outline-dark">选中</button>
+            </div>
+        </div>
+        <input required type="text" class="form-control d-none" name="to" id="folder_select"
+            placeholder="from" value="{{task.to_id}}">
+        <input required type="text" class="form-control d-none" name="foldername" id="folder_name"
+            placeholder="folder_name" id="to_folder_name" value="{{task.folder_name}}">
+        <br>
+        <div class="row">
+            <p>2.输入分享链接&密码</p>
+        </div>
+        <div class="form-floating mb-3">
+            <input required type="text" class="form-control" name="from" id="from" placeholder="分享链接"
+                value="https://www.aliyundrive.com/s/{{task.share_id}}/folder/{{task.from_id}}">
+            <label for="from"><i class="bi bi-link"></i>分享链接</label>
+        </div>
+        <div class="form-floating mb-3">
+            <input type="password" class="form-control" name="key" id="key" placeholder="链接密码" value="{{task.key}}">
+            <label for="key"><i class="bi bi-key"></i>链接密码(可空)</label>
+        </div>
+
+        <div class="row">
+            <p>3.选择任务类型</p>
+        </div>
+        <div class="row text-center">
+            <div class="dropdown">
+                <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                    aria-expanded="false">
+                    下拉选择
+                </button>
+                <input maxlength="25" required type="text" class="form-control d-none" name="type" id="type_select"
+                    placeholder="type">
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li><a class="dropdown-item" onclick="changetype(0)">日任务</a></li>
+                    <li><a class="dropdown-item" onclick="changetype(1)">周任务</a></li>
+                    <li><a class="dropdown-item" onclick="changetype(2)">月任务</a></li>
+                </ul>
+            </div>
+        </div>
+        <div id="tasktypediv"></div>
+        <div class="row">
+            <p>4.给任务命名</p>
+        </div>
+        <div class="form-floating mb-3">
+            <input maxlength="20" required type="text" class="form-control" name="name" value="{{task.name}}" id="name"
+                placeholder="命名">
+            <label for="name"><i class="bi bi-list-task"></i>任务名</label>
+        </div>
+        <div class="row">
+            <p>5.设定更新频率</p>
+        </div>
+        <p><small>为了更精准地更新到最新集数，需要您设置更新频率。其含义为：当到达指定时间，此任务触发时，多少秒获取一次最新集数并判断是否更新。</small></p>
+        <div class="container">
+            <div class="input-group">
+                <input type="number" class="form-control" min="0" max="7200" value="{{task.interval}}"
+                    placeholder="更新频率" id="interval" name="interval"
+                    oninput="if(value>7200)value=7200;if(value<0)value=0">
+                <span class="input-group-text">单位:秒/次</span>
+            </div>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-dark col-6" onclick="applytest()" id="testfy"><i class='bi bi-bug'></i>即时测试</button>
+                <button type="submit" class="btn btn-outline-dark col-6"><i class="bi bi-brush"></i>提交更改</button>
+            </div>
+        </div>
+    </form>
+</body>
+<script>
+    $(document).ready(function () {
+        let itstype = Number('{{task.type}}');
+        changetype(itstype);
+        $("input[name='hours']").val('{{task.hour}}');
+        $("input[name='minutes']").val('{{task.minute}}');
+        $("input[name='seconds']").val('{{task.second}}');
+        if (itstype == 1) {
+            $("input[name='weekday']").val('{{task.plan}}');
+            showWeek();
+        } else if (itstype == 2) {
+            $("input[name='monthday']").val('{{task.plan}}');
+        }
+        $('#selectbtn').click(function () {
+            event.preventDefault();
+            let to = $('#folderframe').contents().find('input:checked').val();
+            let folder_name = $('#folderframe').contents().find('input:checked').attr('name')
+            $("#folder_select").val(to)
+            $("#folder_name").val(folder_name)
+            alert('已选中' + folder_name)
+        });
+    });
+    function showWeek() {
+        let value = $("#week-day").val()
+        if (value == 1) {
+            $("#weekname").text("周二");
+        } else if (value == 2) {
+            $("#weekname").text("周三");
+        } else if (value == 3) {
+            $("#weekname").text("周四");
+        } else if (value == 4) {
+            $("#weekname").text("周五");
+        } else if (value == 5) {
+            $("#weekname").text("周六");
+        } else if (value == 6) {
+            $("#weekname").text("周日");
+        } else if (value == 0) {
+            $("#weekname").text("周一");
+        }
+    };
+    function changetype(type) {
+        $("#type_select").val(type)
+        switch (type) {
+            case 0: $("#tasktypediv").html("<div class='container p-4 my-4 border'><div class='input-group'><input required oninput='if(value>23)value=23;if(value<0)value=0' type='number' min='0' max='23' class='form-control' placeholder='时' id='day-hour' name='hours'><input required name='minutes' oninput='if(value>59)value=59;if(value<0)value=0' type='number' min='0' max='59' class='form-control' placeholder='分' id='day-minute'><input required name='seconds' oninput='if(value>59)value=59;if(value<0)value=0' type='number' min='0' max='59' class='form-control' placeholder='秒' id='day-second'></div></div>")
+                break;
+            case 1: $("#tasktypediv").html("<div class='container p-4 my-4 border' onclick='showWeek()'><label for='week-day' class='form-label'>选择滑块表示周几</label><input type='range' class='form-range' min='0' max='6' id='week-day' oninput='showWeek()' name='weekday' required><div class='text-center'><label for='week-day' class='form-label' id='weekname'>未选中</label></div><div class='input-group'><input name='hours' required oninput='if(value>23)value=23;if(value<0)value=0' type='number' min='0' max='23' class='form-control' placeholder='时' id='week-hour'><input required name='minutes' oninput='if(value>59)value=59;if(value<0)value=0' type='number' min='0' max='59' class='form-control' placeholder='分' id='week-minute'><input required name='seconds' oninput='if(value>59)value=59;if(value<0)value=0' type='number' min='0' max='59' class='form-control' placeholder='秒' id='week-second'></div></div>");
+                break;
+            case 2: $("#tasktypediv").html("<div class='container p-4 my-4 border'><div class='row'><div class='input-group'><span class='input-group-text'>每月</span><input required oninput='if(value>31)value=31;if(value<1)value=1' type='number' min='1' max='31'class='form-control' value='1' id='month-day' name='monthday'><span class='input-group-text'>号</span></div></div><hr><div class='input-group'><input required oninput='if(value>23)value=23;if(value<0)value=0' type='number' min='0' max='23'class='form-control' required placeholder='时' name='hours' id='month-hour'><input required oninput='if(value>59)value=59;if(value<0)value=0' type='number' min='0' max='59'class='form-control' placeholder='分' name='minutes' id='month-minute'><input required name='seconds' oninput='if(value>59)value=59;if(value<0)value=0' type='number' min='0' max='59'class='form-control' placeholder='秒' id='month-second'></div></div>");
+                break;
+        };
+    };
+    function applytest() {
+        $("#testfy").attr("disabled", true)
+        $("#testfy").html("<span class='spinner-border spinner-border-sm' role='status' aria-hidden='true'></span>稍候")
+        event.preventDefault();
+        if ($("#folder_select").val()!=''){
+            if ($("#folder_select").val()!='None'){
+                let formData = $("#editform").serialize();
+                $.post('/applytest', formData, function (response) {
+                    alert(response);
+                    $("#testfy").removeAttr("disabled");
+                    $("#testfy").html("<i class='bi bi-bug'></i>即时测试");
+                });
+            }else{
+                alert('未选中文件夹');
+                $("#testfy").removeAttr("disabled");
+                $("#testfy").html("<i class='bi bi-bug'></i>即时测试");
+            }
+        }else{
+            alert('未选中文件夹');
+            $("#testfy").removeAttr("disabled");
+            $("#testfy").html("<i class='bi bi-bug'></i>即时测试");
+        }
+    }
+</script>

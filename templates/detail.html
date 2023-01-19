@@ -1,0 +1,192 @@
+<head>
+    <title>任务详情</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="../static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../static/img/icons/bootstrap-icons.css" rel="stylesheet">
+    <script src="../static/js/bootstrap.bundle.min.js"></script>
+    <script src="../static/js/jquery.min.js"></script>
+</head>
+
+<body>
+    <div class="text-danger text-center">
+        <h1><i class="bi bi-exclamation-triangle"></i></h1>
+    </div>
+    <div class="alert alert-danger d-flex align-items-center" role="alert">
+        <div>
+            为保护用户权益，无法对任务内容进行写操作！只能查看任务，对任务进行删除、禁用、启用操作！
+        </div>
+    </div>
+    <div class="container border p-1 my-1">
+        <div class="row">
+            <div class="col text-center">
+                <i class="bi bi-trash" onclick="deltask('{{task.name}}','{{task.owner}}')" title="删除此任务"></i>
+            </div>
+            {%if task.switch == 1%}
+            <div class="col text-center text-success">
+                <i class="bi bi-toggle2-on" onclick="turnoff('{{task.name}}','{{task.owner}}')" title="禁用此任务"></i>
+            </div>
+            {% else %}
+            <div class="col text-center">
+                <i class="bi bi-toggle2-off" onclick="turnon('{{task.name}}','{{task.owner}}')" title="启用此任务"></i>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <hr>
+    <div class="container borde">
+        <input readonly required type="text" class="form-control d-none" name="old_name" id="old_name"
+            placeholder="old_name" id="old_name" value="{{task.name}}">
+        <div class="row">
+            <p>1.目标文件夹</p>
+        </div>
+        <div class="row">
+            <p>保存在【{{task.folder_name}}】中</p>
+        </div>
+        <br>
+        <div class="row">
+            <p>2.分享链接&密码</p>
+        </div>
+        <div class="form-floating mb-3">
+            <input readonly required type="text" class="form-control" name="from" id="from" placeholder="分享链接"
+                value="https://www.aliyundrive.com/s/{{task.share_id}}/folder/{{task.from_id}}">
+            <label for="from"><i class="bi bi-link"></i>分享链接</label>
+        </div>
+        {% if task.key!='' %}
+        <div class="form-floating mb-3">
+            <input readonly type="password" class="form-control" name="key" id="key" placeholder="链接密码"
+                value="{{task.key}}">
+            <label for="key"><i class="bi bi-key"></i>链接密码</label>
+        </div>
+        {% else %}
+        <div class="row">
+            <p>此链接无密码</p>
+        </div>
+        {% endif %}
+        <div class="row">
+            <p>3.任务类型</p>
+        </div>
+        <div id="tasktypediv"></div>
+        <div class="row">
+            <p>4.任务名</p>
+        </div>
+        <div class="form-floating mb-3">
+            <input readonly maxlength="20" required type="text" class="form-control" name="name" value="{{task.name}}"
+                id="name" placeholder="命名">
+            <label for="name"><i class="bi bi-list-task"></i>任务名</label>
+        </div>
+        <div class="row">
+            <p>5.更新频率</p>
+        </div>
+        <div class="container">
+            <div class="input-group">
+                <input readonly type="number" class="form-control" min="0" max="7200" value="{{task.interval}}"
+                    placeholder="更新频率" id="interval" name="interval"
+                    oninput="if(value>7200)value=7200;if(value<0)value=0">
+                <span class="input-group-text">单位:秒/次</span>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    $(document).ready(function () {
+        let itstype = Number('{{task.type}}');
+        changetype(itstype);
+        $("input[name='hours']").val('{{task.hour}}');
+        $("input[name='minutes']").val('{{task.minute}}');
+        $("input[name='seconds']").val('{{task.second}}');
+        if (itstype == 1) {
+            $("input[name='weekday']").val('{{task.plan}}');
+            showWeek();
+        } else if (itstype == 2) {
+            $("input[name='monthday']").val('{{task.plan}}');
+        }
+    });
+    function showWeek() {
+        let value = $("#week-day").val()
+        if (value == 1) {
+            $("#weekname").text("周二");
+        } else if (value == 2) {
+            $("#weekname").text("周三");
+        } else if (value == 3) {
+            $("#weekname").text("周四");
+        } else if (value == 4) {
+            $("#weekname").text("周五");
+        } else if (value == 5) {
+            $("#weekname").text("周六");
+        } else if (value == 6) {
+            $("#weekname").text("周日");
+        } else if (value == 0) {
+            $("#weekname").text("周一");
+        }
+    };
+    function changetype(type) {
+        $("#type_select").val(type)
+        switch (type) {
+            case 0: $("#tasktypediv").html("<div class='container p-4 my-4 border'><div class='input-group'><input readonly required oninput='if(value>23)value=23;if(value<0)value=0' type='number' min='0' max='23' class='form-control' placeholder='时' id='day-hour' name='hours'><input readonly required name='minutes' oninput='if(value>59)value=59;if(value<0)value=0' type='number' min='0' max='59' class='form-control' placeholder='分' id='day-minute'><input readonly required name='seconds' oninput='if(value>59)value=59;if(value<0)value=0' type='number' min='0' max='59' class='form-control' placeholder='秒' id='day-second'></div></div>")
+                break;
+            case 1: $("#tasktypediv").html("<div class='container p-4 my-4 border' onclick='showWeek()'><input disable type='range' class='form-range' min='0' max='6' id='week-day' oninput='showWeek()' name='weekday' required><div class='text-center'><label for='week-day' class='form-label' id='weekname'>未选中</label></div><div class='input-group'><input readonly name='hours' required oninput='if(value>23)value=23;if(value<0)value=0' type='number' min='0' max='23' class='form-control' placeholder='时' id='week-hour'><input readonly required name='minutes' oninput='if(value>59)value=59;if(value<0)value=0' type='number' min='0' max='59' class='form-control' placeholder='分' id='week-minute'><input readonly required name='seconds' oninput='if(value>59)value=59;if(value<0)value=0' type='number' min='0' max='59' class='form-control' placeholder='秒' id='week-second'></div></div>");
+                break;
+            case 2: $("#tasktypediv").html("<div class='container p-4 my-4 border'><div class='row'><div class='input-group'><span class='input-group-text'>每月</span><input readonly required oninput='if(value>31)value=31;if(value<1)value=1' type='number' min='1' max='31'class='form-control' value='1' id='month-day' name='monthday'><span class='input-group-text'>号</span></div></div><hr><div class='input-group'><input readonly required oninput='if(value>23)value=23;if(value<0)value=0' type='number' min='0' max='23'class='form-control' required placeholder='时' name='hours' id='month-hour'><input readonly required oninput='if(value>59)value=59;if(value<0)value=0' type='number' min='0' max='59'class='form-control' placeholder='分' name='minutes' id='month-minute'><input readonly required name='seconds' oninput='if(value>59)value=59;if(value<0)value=0' type='number' min='0' max='59'class='form-control' placeholder='秒' id='month-second'></div></div>");
+                break;
+        };
+    };
+    function turnoff(taskname, owner) {
+        if (confirm("是否确认禁用任务【" + taskname + "】?")) {
+            let data = JSON.stringify({ 'taskname': taskname, 'owner': owner })
+            $.ajax({
+                type: "post",
+                url: '/turnoff',
+                contentType: "application/json",
+                dataType: "json",
+                data: data,
+                success: function (res) {
+                    alert(res['notice'])
+                    parent.location.reload();
+                },
+                error: function (xhr, status, error) {
+                    alert('出错,状态码:' + status)
+                }
+            })
+        }
+
+    }
+    function turnon(taskname, owner) {
+        if (confirm("是否确认启用任务【" + taskname + "】?")) {
+            let data = JSON.stringify({ 'taskname': taskname, 'owner': owner })
+            $.ajax({
+                type: "post",
+                url: '/turnon',
+                contentType: "application/json",
+                dataType: "json",
+                data: data,
+                success: function (res) {
+                    alert(res['notice'])
+                    parent.location.reload();
+                },
+                error: function (xhr, status, error) {
+                    alert('出错,状态码:' + status)
+                }
+            })
+        }
+    }
+    function deltask(taskname, owner) {
+        if (confirm("是否确认删除任务【" + taskname + "】?")) {
+            let data = JSON.stringify({ 'taskname': taskname, 'owner': owner })
+            $.ajax({
+                type: "post",
+                url: '/del',
+                contentType: "application/json",
+                dataType: "json",
+                data: data,
+                success: function (res) {
+                    alert(res['notice'])
+                    parent.location.reload();
+                },
+                error: function (xhr, status, error) {
+                    alert('出错,状态码:' + status)
+                }
+            })
+        }
+    }
+</script>

@@ -1,0 +1,372 @@
+{% extends "model.html" %}
+{% block title %}管理员页面{% endblock %}
+{% block content %}
+<div class="text-end">
+    <div>欢迎您, 尊贵的管理员
+        <div class="btn-group">
+            <button class="btn btn-outline-dark btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                aria-expanded="false">
+                <i class="bi bi-person"></i>
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="/startup"><i class="bi bi-gear"></i>后台配置</a></li>
+                <li>
+                    <hr class="dropdown-divider">
+                </li>
+                <li>
+                    <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#signoutModal"><i
+                            class="bi bi-box-arrow-right"></i>退出登录</a>
+                </li>
+            </ul>
+        </div>
+        <br>
+    </div>
+</div>
+<div class="modal fade" id="signoutModal" tabindex="-1" aria-labelledby="signoutModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="signoutModalLabel">警告</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>您确定要退出登录吗？</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <form action="/signout" method="post">
+                    <button type="submit" class="btn btn-outline-dark">登出</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<br>
+<div class="container borde">
+    <div class="card">
+        <div class="card-body">
+            <div class="row text-center">
+                <p><i class="bi bi-book"></i>日志</p>
+            </div>
+            <textarea name="dialog" id="dialog" class="form-control text-small" style="height: 150px;"
+                wrap="off">{{dialog}}</textarea>
+            <div class="row">
+                <div class="btn-group">
+                    <button class="btn btn-outline-dark" onclick="cleardialog()">
+                        清除<i class="bi bi-x-octagon"></i>
+                    </button>
+                    <div class="dropdown">
+                        <a class="btn btn-outline-dark dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            显示行数
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            <li><a class="dropdown-item" onclick="getdialog(10)">10行</a></li>
+                            <li><a class="dropdown-item" onclick="getdialog(50)">50行</a></li>
+                            <li><a class="dropdown-item" onclick="getdialog(200)">200行</a></li>
+                        </ul>
+                    </div>
+                    <button class="btn btn-outline-dark" onclick="getdialog(5)">
+                        刷新<i class="bi bi-arrow-counterclockwise"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <hr>
+    <div class="card text-center">
+        <div class="card-body">
+                <div class="row">
+                    <p><i class="bi bi-box2"></i>仓库</p>
+                </div>
+                <div class="row">
+                    <div class="col text-end"><span class="badge bg-dark"><i class="bi bi-bookmark"></i>任务总数:{{total}}</span></div>
+                    <div class="col text-start"><span class="badge bg-success"><i class="bi bi-bookmark-check"></i>正在运行:{{enabled}}</span></div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col text-end"><span class="badge bg-dark"><i class="bi bi-person"></i>用户总数:{{members}}</span></div>
+                    <div class="col text-start"><span class="badge bg-success"><i class="bi bi-person-check"></i>在线人数:{{online}}</span></div>
+                </div>
+        </div>
+    </div>
+    <br>
+    <div class="container borde">
+        <div class="row">
+            <div class="col-lg-4">
+                <select class="form-select" id="searchSelect">
+                    <option selected>搜索方式</option>
+                    <option value="1">用户昵称</option>
+                    <option value="2">任务名称</option>
+                </select>
+            </div>
+            <div class="col-lg-8">
+                <form action="/usercenter" method="get">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="search_input" placeholder="输入文本" aria-label="输入文本"
+                            aria-describedby="basic-addon1">
+                        <button type="submit" class="btn btn-outline-dark" data-bs-toggle="tooltip" data-bs-placement="top"
+                        title="输入文本"><i class="bi bi-search"></i></button>
+                        <button type="button" class="btn btn-outline-dark" data-bs-toggle="tooltip" data-bs-placement="top"
+                        title="返回主页" onclick="event.preventDefault();window.location='/usercenter';"><i
+                            class="bi bi-house"></i></button>   
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+    </div>
+    
+    <div class="container borde">
+        <div class="overflow-auto" style="height: 600px;">
+            <ul class="list-group">
+                {%for user in users%}
+                <li class="list-group-item">
+                    <div class="row">
+                        <div class="col-1">
+                            <i class="bi bi-chevron-down" id="{{user.username}}arr" data-bs-toggle="collapse"
+                                data-bs-target="#{{user.username}}TaskCollapse" aria-expanded="false"
+                                aria-controls="{{user.username}}TaskCollapse"
+                                onclick="changearr('{{user.username}}arr');"></i>
+                        </div>
+                        <div class="col">
+                            <span>
+                                {% if user.online %}
+                                <small><i class="bi bi-circle-fill text-success"></i></small>
+                                {% else %}
+                                <small><i class="bi bi-circle-fill text-danger"></i></small>
+                                {% endif %}
+                                {% if user.nickname[7] %}
+                                {{user.nickname[0:6]}}...
+                                {%else%}
+                                {{user.nickname}}
+                                {%endif%}
+                            </span>
+                        </div>
+                        <div class="col-5 text-end">
+                            <div class="btn-group text-end">
+                                {% if user.online %}
+                                <button type="button" class="btn btn-sm"><i class="bi bi-cloud-slash"
+                                        data-bs-toggle="tooltip" onclick="kickoff('{{user.username}}')"
+                                        data-bs-placement="top" title="下线阿里云"></i></button>
+                                {% else %}
+                                <button type="button" class="btn btn-sm"><i class="bi bi-cloud-upload"
+                                        data-bs-toggle="tooltip" onclick="login('{{user.username}}')"
+                                        data-bs-placement="top" title="上线阿里云"></i></button>
+                                {% endif %}
+                                <button type="button" class="btn btn-sm"><i class="bi bi-trash" data-bs-toggle="tooltip"
+                                        onclick="deluser('{{user.username}}')" data-bs-placement="top"
+                                        title="删除此人"></i></button>
+                                {%if not user.baned%}
+                                <button type="button" class="btn text-success btn-sm" data-bs-toggle="tooltip"
+                                    onclick="ban('{{user.username}}')" data-bs-placement="top" title="封禁此人"><i
+                                        class="bi bi-toggle2-on"></i></button>
+                                {% else %}
+                                <button type="button" class="btn btn-sm" data-bs-toggle="tooltip"
+                                    onclick="unban('{{user.username}}')" data-bs-placement="top" title="解封此人"><i
+                                        class="bi bi-toggle2-off"></i></button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="collapse" id="{{user.username}}TaskCollapse">
+                        <hr>
+                        {% set usn=user.username %}
+                        {% if not tasklist[usn] %}
+                        <p>该用户暂无任务</p>
+                        {% else %}
+                        <ul class="list-group">
+                            {%for task in tasklist[usn]%}
+                            <li class="list-group-item">
+                                <div class="row">
+                                    {% if task.name[8] %}
+                                    <div class="col text-start text-small" title="{{task.name}}">
+                                        {%if task.switch==1%}
+                                        <small><i class="bi bi-check-circle-fill text-success"></i></small>
+                                        {% else %}
+                                        <small><i class="bi bi-slash-circle-fill text-secondary"></i></small>
+                                        {% endif %}
+                                        {{task.name[0:7]}}...
+                                    </div>
+                                    {%else%}
+                                    <div class="col text-start text-small">
+                                        {%if task.switch==1%}
+                                        <small><i class="bi bi-check-circle-fill text-success"></i></small>
+                                        {% else %}
+                                        <small><i class="bi bi-slash-circle-fill text-secondary"></i></small>
+                                        {% endif %}
+                                        {{task.name}}
+                                    </div>
+                                    {%endif%}
+                                    <div class="col-2 text-end">
+                                        <div class="btn-group text-end">
+                                            <button type="button" class="btn btn-sm"><i class="bi bi-sliders"
+                                                    data-bs-toggle="offcanvas" data-bs-target="#editoffcan"
+                                                    onclick="detail('{{task.name}}','{{task.owner}}')"
+                                                    data-bs-placement="top" title="查看详情"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                            {%endfor%}
+                        </ul>
+                        {% endif %}
+                    </div>
+                </li>
+                {%endfor%}
+            </ul>
+        </div>
+    </div>
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="editoffcan" aria-labelledby="editLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="editLabel">任务详情</h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <div class="offcanvas-body">
+                <iframe marginwidth="0" marginheight="0" width="100%" name="i" id="edittaskFrame" frameborder="0"
+                    scrolling="no" style="height: 1000px"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    $(document).ready(function () {
+        $( "#searchSelect" ).change(function() {
+        if($(this).val()==1){
+            $( "#search_input").attr( "name", "user" );
+        }else{
+            $( "#search_input").attr( "name", "task" );
+        }
+        });
+    });
+    function detail(taskName, owner) {
+        $('#edittaskFrame', $(window.parent.document)).attr('src', '/detail?taskname=' + taskName + '&owner=' + owner);
+    }
+    function changearr(id) {
+        let getid = "#" + id
+        if ($(getid).attr("class") == "bi bi-chevron-down") {
+            $(getid).attr("class", "bi bi-chevron-up");
+        } else {
+            $(getid).attr("class", "bi bi-chevron-down");
+        }
+    }
+    function cleardialog() {
+        if (confirm("是否确认清空日志?")) {
+            $.ajax({
+                type: "POST",
+                url: '/clearadmindialog',
+                success: function (res) {
+                    $('#dialog').text(res);
+                }
+            });
+        };
+    };
+    function getdialog(lines) {
+        let data = JSON.stringify({ 'lines': lines })
+        $.ajax({
+            type: "post",
+            url: '/getadmindialog',
+            contentType: "application/json",
+            dataType: "json",
+            data: data,
+            success: function (res) {
+                $('#dialog').text(res['dialog']);
+            },
+            error: function (xhr, status, error) {
+                alert(status, error)
+            }
+        })
+    };
+    function deluser(username) {
+        if (confirm("是否确认删除用户【" + username + "】?")) {
+            $.ajax({
+                type: "post",
+                url: '/deluser',
+                data: {
+                    username: username
+                },
+                success: function (res) {
+                    alert(res);
+                    location.reload();
+                },
+                error: function (xhr, status, error) {
+                    alert('出错,状态码:' + status)
+                }
+            })
+        }
+    };
+    function kickoff(username) {
+        if (confirm("是否确认下线用户【" + username + "】的阿里云盘?")) {
+            $.ajax({
+                type: "post",
+                url: '/kickoff',
+                data: {
+                    username: username
+                },
+                success: function (res) {
+                    alert(res);
+                    location.reload();
+                },
+                error: function (xhr, status, error) {
+                    alert('出错,状态码:' + status);
+                }
+            })
+        }
+    };
+    function login(username) {
+        if (confirm("是否确认上线用户【" + username + "】的阿里云盘?")) {
+            $.ajax({
+                type: "post",
+                url: '/login',
+                data: {
+                    username: username
+                },
+                success: function (res) {
+                    alert(res);
+                    location.reload();
+                },
+                error: function (xhr, status, error) {
+                    alert('出错,状态码:' + status);
+                }
+            })
+        }
+    };
+    function ban(username) {
+        if (confirm("是否确认封禁用户【" + username + "】?")) {
+            $.ajax({
+                type: "post",
+                url: '/ban',
+                data: {
+                    username: username
+                },
+                success: function (res) {
+                    alert(res)
+                    location.reload()
+                },
+                error: function (xhr, status, error) {
+                    alert('出错,状态码:' + status)
+                }
+            })
+        }
+    };
+    function unban(username) {
+        if (confirm("是否确认解封用户【" + username + "】?")) {
+            $.ajax({
+                type: "post",
+                url: '/unban',
+                data: {
+                    username: username
+                },
+                success: function (res) {
+                    alert(res)
+                    location.reload()
+                },
+                error: function (xhr, status, error) {
+                    alert('出错,状态码:' + status)
+                }
+            })
+        }
+    };
+</script>
+{% endblock %}

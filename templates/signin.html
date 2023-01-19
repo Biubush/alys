@@ -1,0 +1,36 @@
+{% extends "model.html" %}
+{% block title %}阿里云登录{% endblock %}
+{% block content %}
+<div class="text-center">
+    <p>您的阿里云盘尚未登录或已离线，请扫描以下二维码进行登录操作</p>
+    <img src="" class="img-fluid" id="qrcode">
+    <div class="row">
+        <div class="col">
+            <span class="badge" id="tipspan">null</span>
+        </div>
+    </div>
+</div>
+<script>
+    $(document).ready(function () {
+        setTimeout(function () {
+            $("#tipspan").addClass('bg-danger');
+            $("#qrcode").attr('src', '{{src}}').load();
+        }, 2000);
+        t1 = setInterval(function () {
+            $.ajax({
+                type: "POST",
+                url: '/online',
+                success: function (res) {
+                    $("#tipspan").html(res)
+                    if (res == '<i class="bi bi-check-circle"></i>登录成功') {
+                        $("#tipspan").removeClass('bg-danger');
+                        $("#tipspan").addClass('bg-success');
+                        clearInterval(t1);
+                        location.href = '/'
+                    }
+                }
+            })
+        }, 1000)
+    });
+</script>
+{% endblock %}

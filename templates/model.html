@@ -1,0 +1,53 @@
+<head>
+    <title>{% block title %}{% endblock %}</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="shortcut icon" href="../static/img/sources/webicon.png" type="image/x-icon"/>
+    <link href="../static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../static/img/icons/bootstrap-icons.css" rel="stylesheet">
+    <script src="../static/js/bootstrap.bundle.min.js"></script>
+    <script src="../static/js/jquery.min.js"></script>
+</head>
+
+<body>
+    <div class="container p-4 my-4 border">
+        <div class="row">
+            <div class="col"></div>
+            <div class="col-md-6 container p-4 my-4 border">
+                <div class="container text-center">
+                    <figure class="figure text-center position-relative">
+                        <img src="../static/img/sources/webicon.png" class="figure-img img-fluid rounded" width="160"
+                            height="160">
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            Beta
+                        </span>
+                    </figure>
+                </div>
+                <div class="text-center">
+                    <p><small><i class="bi bi-lightbulb"></i>AliyunSubscriber</small></p>
+                </div>
+                <hr>
+                <div class="container">
+                    {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        <strong>注意!</strong>{{message}}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+                </div>
+                {% block content %}{% endblock %}
+                <br>
+                <br>
+                <hr>
+                <div class="text-center">
+                    <p><small><i class="bi bi-c-circle"></i>Biubush 2023 仅供学习交流 切勿传播使用</small></p>
+                </div>
+            </div>
+            <div class="col"></div>
+        </div>
+    </div>
+</body>

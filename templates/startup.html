@@ -1,0 +1,90 @@
+{% extends "model.html" %}
+{% block title %}初始化页面{% endblock %}
+{% block content %}
+<form action="/startup" method="post">
+    <div class="alert alert-dark" role="alert">
+        1.设定后台账户
+    </div>
+    <div class="form-floating mb-3">
+        <input maxlength="15" required type="text" value="{{data.username}}" class="form-control" name="username"
+            id="username" placeholder="账号">
+        <label for="username"><i class="bi bi-person"></i>后台账号</label>
+    </div>
+    <div class="form-floating mb-3">
+        <input maxlength="25" required type="password" value="{{data.password}}" class="form-control" name="password"
+            id="password1" placeholder="密码">
+        <label for="password1"><i class="bi bi-key"></i>后台密码</label>
+    </div>
+    <div class="form-floating mb-3">
+        <input maxlength="25" required type="password" value="{{data.password}}" class="form-control"
+            name="verifypassword" id="password2" placeholder="密码">
+        <label for="password2"><i class="bi bi-key"></i>确认密码</label>
+    </div>
+    <div class="text-start">
+        <p id="confirmpsw"><small></small></p>
+    </div>
+    <div class="alert alert-dark" role="alert">
+        2.设定后台端口
+    </div>
+    <div class="form-floating mb-3">
+        <input maxlength="6" required type="number" value="{{data.port}}" class="form-control" name="port" id="port"
+            placeholder="端口">
+        <label for="port"><i class="bi bi-displayport"></i>后台端口</label>
+    </div>
+    <div class="alert alert-dark" role="alert">
+        3.设定邮件服务器
+    </div>
+    <div class="form-floating mb-3">
+        <input maxlength="25" required type="email" value="{{data.mail_user}}" class="form-control" name="mail_user"
+            id="mail_user" placeholder="发件账户">
+        <label for="mail_user"><i class="bi bi-envelope"></i>发件账户</label>
+    </div>
+    <div class="form-floating mb-3">
+        <input maxlength="25" required type="password" value="{{data.mail_password}}" class="form-control"
+            name="mail_password" id="mail_password" placeholder="发件密码">
+        <label for="mail_password"><i class="bi bi-key"></i>发件密码</label>
+    </div>
+    <div class="form-floating mb-3">
+        <input maxlength="25" required type="email" value="{{data.mail_sender}}" class="form-control" name="mail_sender"
+            id="mail_sender" placeholder="发件人">
+        <label for="mail_sender"><i class="bi bi-envelope-at"></i>发件人</label>
+    </div>
+    <div class="form-floating mb-3">
+        <input maxlength="25" required type="email" value="{{data.mail_receiver}}" class="form-control"
+            name="mail_receiver" id="mail_receiver" placeholder="官方收件人">
+        <label for="mail_receiver"><i class="bi bi-envelope-open"></i>官方收件人</label>
+    </div>
+    <div class="alert alert-dark" role="alert">
+        4.设定个人域名
+    </div>
+    <div class="form-floating mb-3">
+        <input maxlength="25" type="text" value="{{data.website}}" class="form-control"
+            name="website" id="website" placeholder="官方收件人">
+        <label for="website"><i class="bi bi-link-45deg"></i>官方网址(可空)</label>
+    </div>
+    <br>
+    <div class="row">
+        <div class="btn-group">
+            <button class="btn btn-outline-dark" type="submit"><i class="bi bi-arrow-up"></i>
+                提交</button>
+            <button class="btn btn-outline-dark" type="button" onclick="event.preventDefault();window.history.go(-1);"><i class="bi bi-arrow-90deg-left"></i>
+                返回</button>
+        </div>
+    </div>
+</form>
+<script>
+    $(document).ready(function () {
+        $('#password2').keyup(function () {
+            let password1 = $('#password1').val();
+            let password2 = $('#password2').val();
+            if (password1 != password2) {
+                $("#confirmpsw").css("color", "red");
+                $("#confirmpsw").text("两次密码输入不一致");
+            } else {
+                $("#confirmpsw").css("color", "green");
+                $("#confirmpsw").text("密码验证成功！");
+            }
+        });
+    });
+</script>
+{% endblock %}

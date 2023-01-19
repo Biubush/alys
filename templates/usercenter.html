@@ -1,0 +1,437 @@
+{% extends "model.html" %}
+{% block title %}个人中心{% endblock %}
+{% block content %}
+<div class="text-end">
+    <div>欢迎您, {{userdata.nickname}}
+        <div class="btn-group">
+            <button class="btn btn-outline-dark btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                aria-expanded="false">
+                <i class="bi bi-person"></i>
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="/profile"><i class="bi bi-pencil-square"></i>修改资料</a></li>
+                <li>
+                    <hr class="dropdown-divider">
+                </li>
+                <li>
+                    <a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#signoutModal"><i
+                            class="bi bi-box-arrow-right"></i>退出登录</a>
+                </li>
+            </ul>
+        </div>
+        <br>
+    </div>
+</div>
+<div class="modal fade" id="signoutModal" tabindex="-1" aria-labelledby="signoutModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="signoutModalLabel">警告</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>您确定要退出登录吗？</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <form action="/signout" method="post">
+                    <button type="submit" class="btn btn-outline-dark">登出</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<br>
+<div class="container borde">
+    <div class="card">
+        <div class="card-body">
+            <div class="row text-center">
+                <p><i class="bi bi-book"></i>日志</p>
+            </div>
+            <textarea name="dialog" id="dialog" class="form-control text-small" style="height: 150px;"
+                wrap="off">{{dialog}}</textarea>
+            <div class="row">
+                <div class="btn-group">
+                    <button class="btn btn-outline-dark" onclick="cleardialog()">
+                        清除<i class="bi bi-x-octagon"></i>
+                    </button>
+                    <div class="dropdown">
+                        <a class="btn btn-outline-dark dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            显示行数
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            <li><a class="dropdown-item" onclick="getdialog(5)">5行</a></li>
+                            <li><a class="dropdown-item" onclick="getdialog(20)">20行</a></li>
+                            <li><a class="dropdown-item" onclick="getdialog(100)">100行</a></li>
+                        </ul>
+                    </div>
+                    <button class="btn btn-outline-dark" onclick="getdialog(5)">
+                        刷新<i class="bi bi-arrow-counterclockwise"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <hr>
+    <div class="card text-center">
+        <div class="card-body">
+            <div class="row">
+                <p><i class="bi bi-eye"></i>概览</p>
+            </div>
+            <div class="row">
+                <div>
+                    {% if userdata.online %}
+                    <span class="badge bg-success" onclick="offline('{{userdata.username}}')">阿里云盘状态:已登录(点击注销)</span>
+                    {%else%}
+                    <span class="badge bg-danger">阿里云盘状态:未登录</span>
+                    {% endif %}
+                </div>
+            </div>
+            <span class="badge bg-dark">任务总数:{{total}}</span>
+            <span class="badge bg-success">正在运行:{{enabled}}</span>
+        </div>
+    </div>
+    <br>
+    {% if userdata.online %}
+    <div class="modal fade" id="addtaskModal" tabindex="-1" aria-labelledby="addtaskModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="/addtask" method="post" id="addform">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="addtaskModalLabel">添加任务</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <p>1.保存至哪个文件夹</p>
+                        </div>
+                        <div class="container">
+                            <iframe class="col-10 offset-1" src="/folder" id="folderframe"
+                                style="height: 350px;overflow-y: scroll;"></iframe>
+                        </div>
+                        <div class="row">
+                            <div class="btn-group col-8 offset-2">
+                                <button id="selectbtn" class="btn btn-outline-dark">选中</button>
+                            </div>
+                        </div>
+                        <input required type="text" class="form-control d-none" name="to" id="folder_select"
+                            placeholder="from">
+                        <input required type="text" class="form-control d-none" name="foldername" id="folder_name"
+                            placeholder="folder_name" id="to_folder_name">
+                        <br>
+                        <div class="row">
+                            <p>2.输入分享链接&密码</p>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input required type="text" class="form-control" name="from" id="from" placeholder="分享链接">
+                            <label for="from"><i class="bi bi-link"></i>分享链接</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="password" class="form-control" name="key" id="key" placeholder="链接密码">
+                            <label for="key"><i class="bi bi-key"></i>链接密码(可空)</label>
+                        </div>
+
+                        <div class="row">
+                            <p>3.选择任务类型</p>
+                        </div>
+                        <div class="row text-center">
+                            <div class="dropdown">
+                                <button class="btn btn-secondary dropdown-toggle" type="button"
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                    下拉选择
+                                </button>
+                                <input maxlength="25" required type="text" class="form-control d-none" name="type"
+                                    id="type_select" placeholder="type">
+                                <ul class="dropdown-menu dropdown-menu-dark">
+                                    <li><a class="dropdown-item" onclick="changetype(0)">日任务</a></li>
+                                    <li><a class="dropdown-item" onclick="changetype(1)">周任务</a></li>
+                                    <li><a class="dropdown-item" onclick="changetype(2)">月任务</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div id="tasktypediv"></div>
+                        <div class="row">
+                            <p>4.给任务命名</p>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input maxlength="20" required type="text" class="form-control" name="name" id="name"
+                                placeholder="命名">
+                            <label for="name"><i class="bi bi-list-task"></i>任务名</label>
+                        </div>
+                        <div class="row">
+                            <p>5.设定更新频率</p>
+                        </div>
+                        <p><small>为了更精准地更新到最新集数，需要您设置更新频率。其含义为：当到达指定时间，此任务触发时，多少秒获取一次最新集数并判断是否更新。</small></p>
+                        <div class="container">
+                            <div class="input-group">
+                                <input type="number" class="form-control" min="0" max="7200" placeholder="更新频率"
+                                    id="interval" name="interval" oninput="if(value>7200)value=7200;if(value<0)value=0">
+                                <span class="input-group-text">单位:秒/次</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-dark" onclick="applytest()" id="testfy"><i
+                                class="bi bi-bug"></i>即时测试</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-outline-dark">提交</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="editoffcan" aria-labelledby="editLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="editLabel">编辑任务</h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <div class="offcanvas-body">
+                <iframe marginwidth="0" marginheight="0" width="100%" name="i" id="edittaskFrame" frameborder="0"
+                    scrolling="no" style="height: 1350px"></iframe>
+            </div>
+        </div>
+    </div>
+    <div class="row col-lg-8 offset-lg-2">
+        <form action="/usercenter" method="get">
+            <div class="input-group mb-3">
+                <button type="button" class="btn btn-outline-dark" data-bs-toggle="modal"
+                    data-bs-target="#addtaskModal" title="添加任务"><i class="bi bi-clipboard-plus"></i></button>
+                <input type="text" class="form-control" placeholder="搜索任务" aria-label="搜索任务"
+                    aria-describedby="basic-addon1" name="search">
+                <button type="submit" class="btn btn-outline-dark" data-bs-toggle="tooltip" data-bs-placement="top"
+                    title="搜索任务"><i class="bi bi-search"></i></button>
+                <button type="button" class="btn btn-outline-dark" data-bs-toggle="tooltip" data-bs-placement="top"
+                    title="返回主页" onclick="event.preventDefault();window.location='/usercenter';"><i
+                        class="bi bi-house"></i></button>
+            </div>
+        </form>
+    </div>
+    <div class="col-lg-8 offset-lg-2 overflow-auto" style="height: 300px;">
+        <ul class="list-group">
+            {%for task in tasks%}
+            <li class="list-group-item">
+                <div class="row">
+                    <div class="col text-start">
+                        {% if task.name[7] %}
+                        {{task.name[0:6]}}...
+                        {%else%}
+                        {{task.name}}
+                        {%endif%}
+                    </div>
+                    <div class="col-6 text-end">
+                        <div class="btn-group text-end">
+                            <button type="button" class="btn"><i class="bi bi-pencil-square" data-bs-placement="top"
+                                    title="编辑此任务" data-bs-toggle="offcanvas" data-bs-target="#editoffcan"
+                                    onclick="showEditOffCan('{{task.name}}','{{task.owner}}')"></i></button>
+                            <button type="button" class="btn"><i class="bi bi-trash" data-bs-toggle="tooltip"
+                                    onclick="deltask('{{task.name}}','{{task.owner}}')" data-bs-placement="top"
+                                    title="删除此任务"></i></button>
+                            {%if task.switch == 1%}
+                            <button type="button" class="btn text-success" data-bs-toggle="tooltip"
+                                onclick="turnoff('{{task.name}}','{{task.owner}}')" data-bs-placement="top"
+                                title="禁用此任务"><i class="bi bi-toggle2-on"></i></button>
+                            {% else %}
+                            <button type="button" class="btn" data-bs-toggle="tooltip"
+                                onclick="turnon('{{task.name}}','{{task.owner}}')" data-bs-placement="top"
+                                title="启用此任务"><i class="bi bi-toggle2-off"></i></button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </li>
+            {%endfor%}
+        </ul>
+    </div>
+    {% else %}
+    <div class="row text-center">
+        <div class="col"></div>
+        <div class="col container">
+            <div class="card" style="width: 19rem;">
+                <img src="../static/img/sources/aly.png" class="card-img-top">
+                <div class="card-body">
+                    <h5 class="card-title">当前离线</h5>
+                    <p class="card-text">您尚未登录或已下线阿里云盘，无法使用ALYS的订阅功能。请点击下方按钮跳转，【扫码登录】阿里云盘，以解锁ALYS订阅:</p>
+                    <a href="/online" class="btn btn-outline-dark">登录阿里云盘</a>
+                </div>
+            </div>
+        </div>
+        <div class="col"></div>
+    </div>
+    {% endif %}
+</div>
+<script>
+    $(document).ready(function () {
+        changetype(1);
+        $('#selectbtn').click(function () {
+            event.preventDefault();
+            let to = $('#folderframe').contents().find('input:checked').val();
+            let folder_name = $('#folderframe').contents().find('input:checked').attr('name')
+            $("#folder_select").val(to)
+            $("#folder_name").val(folder_name)
+            alert('已选中' + folder_name)
+        });
+    });
+</script>
+<script>
+    function showWeek() {
+        let value = $("#week-day").val()
+        if (value == 1) {
+            $("#weekname").text("周二")
+        } else if (value == 2) {
+            $("#weekname").text("周三")
+        } else if (value == 3) {
+            $("#weekname").text("周四")
+        } else if (value == 4) {
+            $("#weekname").text("周五")
+        } else if (value == 5) {
+            $("#weekname").text("周六")
+        } else if (value == 6) {
+            $("#weekname").text("周日")
+        } else if (value == 0) {
+            $("#weekname").text("周一")
+        }
+    }
+    function applytest() {
+        $("#testfy").attr("disabled", true)
+        $("#testfy").html("<span class='spinner-border spinner-border-sm' role='status' aria-hidden='true'></span>稍候")
+        event.preventDefault();
+        if ($("#folder_select").val() != '') {
+            if ($("#folder_select").val() != 'None') {
+                let formData = $("#addform").serialize();
+                $.post('/applytest', formData, function (response) {
+                    alert(response);
+                    $("#testfy").removeAttr("disabled");
+                    $("#testfy").html("<i class='bi bi-bug'></i>即时测试");
+                });
+            } else {
+                alert('未选中文件夹');
+                $("#testfy").removeAttr("disabled");
+                $("#testfy").html("<i class='bi bi-bug'></i>即时测试");
+            }
+        } else {
+            alert('未选中文件夹');
+            $("#testfy").removeAttr("disabled");
+            $("#testfy").html("<i class='bi bi-bug'></i>即时测试");
+        }
+    }
+    function showEditOffCan(taskName, owner) {
+        $('#edittaskFrame', $(window.parent.document)).attr('src', '/edittask?taskname=' + taskName + '&owner=' + owner);
+    }
+    function changetype(type) {
+        $("#type_select").val(type)
+        switch (type) {
+            case 0: $("#tasktypediv").html("<div class='container p-4 my-4 border'><div class='input-group'><input required oninput='if(value>23)value=23;if(value<0)value=0' type='number' min='0' max='23' class='form-control' placeholder='时' id='day-hour' name='hours'><input required name='minutes' oninput='if(value>59)value=59;if(value<0)value=0' type='number' min='0' max='59' class='form-control' placeholder='分' id='day-minute'><input required name='seconds' oninput='if(value>59)value=59;if(value<0)value=0' type='number' min='0' max='59' class='form-control' placeholder='秒' id='day-second'></div></div>")
+                break;
+            case 1: $("#tasktypediv").html("<div class='container p-4 my-4 border' onclick='showWeek()'><label for='week-day' class='form-label'>选择滑块表示周几</label><input type='range' class='form-range' min='0' max='6' id='week-day' oninput='showWeek()' name='weekday' required><div class='text-center'><label for='week-day' class='form-label' id='weekname'>未选中</label></div><div class='input-group'><input name='hours' required oninput='if(value>23)value=23;if(value<0)value=0' type='number' min='0' max='23' class='form-control' placeholder='时' id='week-hour'><input required name='minutes' oninput='if(value>59)value=59;if(value<0)value=0' type='number' min='0' max='59' class='form-control' placeholder='分' id='week-minute'><input required name='seconds' oninput='if(value>59)value=59;if(value<0)value=0' type='number' min='0' max='59' class='form-control' placeholder='秒' id='week-second'></div></div>");
+                break;
+            case 2: $("#tasktypediv").html("<div class='container p-4 my-4 border'><div class='row'><div class='input-group'><span class='input-group-text'>每月</span><input required oninput='if(value>31)value=31;if(value<1)value=1' type='number' min='1' max='31'class='form-control' value='1' id='month-day' name='monthday'><span class='input-group-text'>号</span></div></div><hr><div class='input-group'><input required oninput='if(value>23)value=23;if(value<0)value=0' type='number' min='0' max='23'class='form-control' required placeholder='时' name='hours' id='month-hour'><input required oninput='if(value>59)value=59;if(value<0)value=0' type='number' min='0' max='59'class='form-control' placeholder='分' name='minutes' id='month-minute'><input required name='seconds' oninput='if(value>59)value=59;if(value<0)value=0' type='number' min='0' max='59'class='form-control' placeholder='秒' id='month-second'></div></div>");
+                break;
+        };
+    };
+    function cleardialog() {
+        if (confirm("是否确认清空日志?")) {
+            $.ajax({
+                type: "POST",
+                url: '/cleardialog',
+                success: function (res) {
+                    $('#dialog').text(res);
+                }
+            });
+        }
+    };
+    function getdialog(lines) {
+        let data = JSON.stringify({ 'lines': lines })
+        $.ajax({
+            type: "post",
+            url: '/getdialog',
+            contentType: "application/json",
+            dataType: "json",
+            data: data,
+            success: function (res) {
+                $('#dialog').text(res['dialog']);
+            },
+            error: function (xhr, status, error) {
+                alert(status, error)
+            }
+        })
+    };
+    function turnoff(taskname, owner) {
+        if (confirm("是否确认禁用任务【" + taskname + "】?")) {
+            let data = JSON.stringify({ 'taskname': taskname, 'owner': owner })
+            $.ajax({
+                type: "post",
+                url: '/turnoff',
+                contentType: "application/json",
+                dataType: "json",
+                data: data,
+                success: function (res) {
+                    alert(res['notice'])
+                    location.reload()
+                },
+                error: function (xhr, status, error) {
+                    alert('出错,状态码:' + status)
+                }
+            })
+        }
+
+    }
+    function turnon(taskname, owner) {
+        if (confirm("是否确认启用任务【" + taskname + "】?")) {
+            let data = JSON.stringify({ 'taskname': taskname, 'owner': owner })
+            $.ajax({
+                type: "post",
+                url: '/turnon',
+                contentType: "application/json",
+                dataType: "json",
+                data: data,
+                success: function (res) {
+                    alert(res['notice'])
+                    location.reload()
+                },
+                error: function (xhr, status, error) {
+                    alert('出错,状态码:' + status)
+                }
+            })
+        }
+    }
+    function deltask(taskname, owner) {
+        if (confirm("是否确认删除任务【" + taskname + "】?")) {
+            let data = JSON.stringify({ 'taskname': taskname, 'owner': owner })
+            $.ajax({
+                type: "post",
+                url: '/del',
+                contentType: "application/json",
+                dataType: "json",
+                data: data,
+                success: function (res) {
+                    alert(res['notice'])
+                    location.reload()
+                },
+                error: function (xhr, status, error) {
+                    alert('出错,状态码:' + status)
+                }
+            })
+        }
+    }
+    function offline(username){
+        if (confirm("是否确认下线阿里云盘？这将导致ALYS订阅功能不可用" )) {
+            $.ajax({
+                type: "post",
+                url: '/kickoff',
+                data: {
+                    username:username
+                },
+                success: function (res) {
+                    alert(res)
+                    location.reload()
+                },
+                error: function (xhr, status, error) {
+                    alert('出错,状态码:' + status)
+                }
+            })
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,95 @@
+<head>
+  <title>Folders</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="../static/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../static/img/icons/bootstrap-icons.css" rel="stylesheet">
+  <script src="../static/js/bootstrap.bundle.min.js"></script>
+  <script src="../static/js/jquery.min.js"></script>
+</head>
+
+<body>
+  <div class="container">
+    <div class="text-center">
+      <div class="input-group mb-3">
+        <input type="text" class="form-control" placeholder="创建文件夹" id="cfolder" aria-label="Recipient's username"
+          aria-describedby="basic-addon2">
+        <button type="button" class="btn btn-outline-dark" onclick="create_folder()">
+          <i class="bi bi-folder-plus"></i>
+        </button>
+      </div>
+    </div>
+    <div class="row">
+      <div class="btn-group">
+        <button type="button" class="btn btn-outline-dark" onclick="window.history.go(-1)">
+          <i class="bi bi-arrow-90deg-left"></i>
+        </button>
+        <button type="button" class="btn btn-outline-dark" onclick="location='/folder'">
+          <i class="bi bi-house-door"></i>
+        </button>
+      </div>
+    </div>
+    <div class="container p-4 my-4 border">
+      <div class="radio-group">
+        {% if folders|length %}
+        {% for folder in folders %}
+        <div class="form-check border">
+          <input class="form-check-input me-1" type="radio" value="{{folder.file_id}}" name="{{folder.name}}">
+          {% if folder.name[10] %}
+          <a href="/folder?id={{folder.file_id}}"
+            class="text-start list-group-item list-group-item-action" data-bs-toggle="tooltip" title="{{folder.name}}">{{folder.name[0:9]}}...</a>
+          {%else%}
+          <a href="/folder?id={{folder.file_id}}"
+            class="text-start list-group-item list-group-item-action">{{folder.name}}</a>
+          {%endif%}
+        </div>
+        {% endfor %}
+        {%else%}
+        <script>
+          alert('当前文件夹中子文件夹为空，即将返回上一页')
+          window.history.go(-1)
+        </script>
+        {%endif%}
+      </div>
+    </div>
+  </div>
+</body>
+<script>
+  $(document).ready(function () {
+    $(".radio-group .form-check").click(function () {
+      $(".radio-group .form-check-input").prop("checked", false);
+      $(this).find(".form-check-input").prop("checked", true);
+    });
+  });
+
+  function create_folder() {
+    if ($("#cfolder").val() != '') {
+      try {
+        let searchParams = new URLSearchParams(window.location.search);
+        let parent_file_id = searchParams.get('id');
+        if (parent_file_id == null) {
+          parent_file_id = 'root'
+        }
+        let data = JSON.stringify({ 'parent_id': parent_file_id, 'foldername': $("#cfolder").val() })
+        $.ajax({
+          type: "post",
+          url: '/createfolder',
+          contentType: "application/json",
+          dataType: "json",
+          data: data,
+          success: function (res) {
+            alert(res['notice']);
+            location.reload();
+          },
+          error: function (xhr, status, error) {
+            alert(status, error)
+          }
+        })
+      } catch (error) {
+        alert('出错，可能当前文件夹下无子文件夹')
+      }
+    } else {
+      alert('未输入文件夹名称')
+    }
+  }
+</script>
