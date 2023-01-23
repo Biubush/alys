@@ -324,6 +324,9 @@ def mainJob(owner:str,taskname:str):#主程序，运行任务
                 Task.query.filter_by(name=taskname,owner=owner).first().switch=False
                 db.session.commit()
                 writeDialog(owner=owner,content='任务【'+taskname+'】运行过程中失败:任务内部出错，可能原因:1.分享被禁；2.分享取消；3.程序出bug')
+                if scheduler.get_job(job_id=taskname+'_'+owner):
+                    scheduler.pause_job(job_id=taskname+'_'+owner)
+                    scheduler.remove_job(job_id=taskname+'_'+owner)
                 sendHtml(
                     user.mail,
                     user.nickname,
@@ -335,6 +338,9 @@ def mainJob(owner:str,taskname:str):#主程序，运行任务
                 break
         if not Task.query.filter_by(name=taskname,owner=owner).first().switch and flag2:
             writeDialog(owner=owner,content='任务【'+taskname+'】运行过程中失败:任务被禁用.')
+            if scheduler.get_job(job_id=taskname+'_'+owner):
+                scheduler.pause_job(job_id=taskname+'_'+owner)
+                scheduler.remove_job(job_id=taskname+'_'+owner)
             sendHtml(
                 user.mail,
                 user.nickname,
