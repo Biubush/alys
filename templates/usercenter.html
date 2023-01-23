@@ -97,7 +97,7 @@
     <div class="modal fade" id="addtaskModal" tabindex="-1" aria-labelledby="addtaskModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form action="/addtask" method="post" id="addform">
+                <form id="addform">
                     <div class="modal-header">
                         <h1 class="modal-title fs-5" id="addtaskModalLabel">添加任务</h1>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -175,7 +175,7 @@
                         <button type="button" class="btn btn-outline-dark" onclick="applytest()" id="testfy"><i
                                 class="bi bi-bug"></i>即时测试</button>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                        <button type="submit" class="btn btn-outline-dark">提交</button>
+                        <button type="button" class="btn btn-outline-dark" onclick="subadd();" id="subbtn">提交</button>
                     </div>
                 </form>
             </div>
@@ -298,18 +298,13 @@
         $("#testfy").html("<span class='spinner-border spinner-border-sm' role='status' aria-hidden='true'></span>稍候")
         event.preventDefault();
         if ($("#folder_select").val() != '') {
-            if ($("#folder_select").val() != 'None') {
-                let formData = $("#addform").serialize();
-                $.post('/applytest', formData, function (response) {
-                    alert(response);
-                    $("#testfy").removeAttr("disabled");
-                    $("#testfy").html("<i class='bi bi-bug'></i>即时测试");
-                });
-            } else {
-                alert('未选中文件夹');
+            let formData = $("#addform").serialize();
+            $.post('/applytest', formData, function (response) {
+                alert(response);
                 $("#testfy").removeAttr("disabled");
                 $("#testfy").html("<i class='bi bi-bug'></i>即时测试");
-            }
+                getdialog(5);
+            });
         } else {
             alert('未选中文件夹');
             $("#testfy").removeAttr("disabled");
@@ -424,13 +419,31 @@
                     username:username
                 },
                 success: function (res) {
-                    alert(res)
-                    location.reload()
+                    alert(res);
+                    location.reload();
                 },
                 error: function (xhr, status, error) {
                     alert('出错,状态码:' + status)
                 }
             })
+        }
+    }
+    function subadd(){
+        $("#subbtn").attr("disabled", true)
+        $("#subbtn").html("<span class='spinner-border spinner-border-sm' role='status' aria-hidden='true'></span>稍候")
+        event.preventDefault();
+        if ($("#folder_select").val() != '') {
+            let formData = $("#addform").serialize();
+            $.post('/addtask', formData, function (response) {
+                alert(response);
+                location.reload();
+                $("#subbtn").removeAttr("disabled");
+                $("#subbtn").html("提交");
+            });
+        } else {
+            alert('未选中文件夹');
+            $("#subbtn").removeAttr("disabled");
+            $("#subbtn").html("提交");
         }
     }
 </script>

@@ -972,13 +972,14 @@ def deltask():
 def addtask():
     if not g.user:
         flash('用户未登录')
-        return redirect(url_for('welcome'))
+        return '非法请求:尚未登录'
     elif Task.query.filter_by(name=request.form.get('name'), owner=g.user.username).first():
-        flash('同名任务已存在，请更改名称以避免冲突')
         writeDialog(g.user.username, '添加任务【' +
                     request.form.get('name')+'】失败:名称冲突')
-        return redirect(url_for('usercenter'))
+        return '同名任务已存在，请更改名称以避免冲突'
     else:
+        name = request.form.get('name')
+        owner = g.user.username
         taskType = int(request.form.get('type'))
         url = request.form.get('from')+'/end'
         share_id = getMidStr(url, "s/", "/")
@@ -1039,25 +1040,19 @@ def addtask():
             db.session.add(task)
             db.session.commit()
             try:
-                name = request.form.get('name')
-                owner = g.user.username
                 if not scheduler.get_job(job_id=name+'_'+owner):
                     addSchedule(taskname=name, owner=owner)
                     writeDialog(g.user.username, '添加任务【'+name+'】成功')
-                    flash('任务添加成功')
-                    return redirect(url_for('usercenter'))
+                    return '任务添加成功'
                 else:
-                    flash('添加任务失败:任务已存在')
                     writeDialog(g.user.username, '添加任务【'+name+'】任务失败:任务已存在')
-                    return redirect(url_for('usercenter'))
+                    return '添加任务失败:任务已存在'
             except:
-                flash('添加任务失败:内部出错')
                 writeDialog(g.user.username, '添加任务【'+name+'】任务失败:内部出错')
-                return redirect(url_for('usercenter'))
+                return '添加任务失败:内部出错'
         else:
-            flash('添加任务失败:链接不合法！')
             writeDialog(g.user.username, '添加任务【'+name+'】任务失败:链接不合法！')
-            return redirect(url_for('usercenter'))
+            return '添加任务失败:链接不合法！'
 
 
 @app.route('/deluser', methods=['POST'])  # 删除用户
