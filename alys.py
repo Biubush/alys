@@ -96,10 +96,14 @@ def sendHtml(mailAdress: str, receieverName: str, Title: str, wholeText: str):
     ADMIN = Admin.query.first()
     globals
     try:
+        if WEBSITE=='':
+            websitehtml="<a>powerd by alys</a>"
+        else:
+            websitehtml=f'''<a href="{WEBSITE}">前往官网</a>'''
         # 电子邮件地址和密码
         email = ADMIN.mail_user
         password = ADMIN.mail_password
-        mail_host = 'smtp.qq.com'
+        mail_host = 'smtp.163.com'
         with open('./static/css/bootstrap.min.css', 'r', encoding='utf-8') as f1:
             cssfile = f1.read()
         with open('./static/js/bootstrap.bundle.min.js', 'r', encoding='utf-8') as f2:
@@ -133,7 +137,7 @@ def sendHtml(mailAdress: str, receieverName: str, Title: str, wholeText: str):
                                 <figure class="figure text-center position-relative">
                                     <img src="https://blog.biubush.cn/upload/2023/01/webicon.png" class="figure-img img-fluid rounded" width="160"
                                         height="160">
-                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger text-white">
                                         Beta
                                     </span>
                                 </figure>
@@ -148,7 +152,7 @@ def sendHtml(mailAdress: str, receieverName: str, Title: str, wholeText: str):
                             <br>
                             <br>
                             <div class="text-end">
-                            <a href="'''+WEBSITE+'''">前往官网</a>
+                            '''+websitehtml+'''
                             </div>
                             <hr>
                             <div class="text-center">
@@ -170,7 +174,7 @@ def sendHtml(mailAdress: str, receieverName: str, Title: str, wholeText: str):
         msg['To'] = receieverName
         msg['From'] = 'ALYS通知'
         # 连接到 SMTP 服务器
-        server = smtplib.SMTP(mail_host)
+        server = smtplib.SMTP(host=mail_host,port=25)
         server.starttls()
         # 登录
         server.login(email, password)
@@ -183,24 +187,14 @@ def sendHtml(mailAdress: str, receieverName: str, Title: str, wholeText: str):
 
 
 def loginAligo(user):  # 传入User对象
-    if user.baned:
-        writeAdminDialog('用户['+user.nickname+']账号遭封禁,不予登录阿里云')
-        user.online = False
-        db.session.commit()
-        return False
-    elif os.path.exists(str(Path.home().joinpath('.aligo'))+'/'+user.username+'.json'):
+    if os.path.exists(str(Path.home().joinpath('.aligo'))+'/'+user.username+'.json'):
         startThread(startAligo, {"owner": user.username})
         user.online = True
         db.session.commit()
         writeDialog(user.username, "阿里云盘登录成功")
         return True
     else:
-        writeAdminDialog(user.nickname+"的aligo配置不存在，发送邮件通知其登录")
-        globals
-        sendHtml(user.mail, user.nickname, '登录失效', '您未登录ALYS或登录已过期，请前往网站去登录')
-        user.online = False
-        db.session.commit()
-        writeDialog(user.username, "阿里云盘登录失败，请扫码登录")
+        writeDialog(user.username, "未登录过阿里云盘或登录过期，跳过")
         return False
 
 
@@ -482,9 +476,9 @@ class Admin(db.Model):
     username = db.Column(db.String(15))
     password = db.Column(db.String(30))
     port = db.Column(db.Integer)
-    mail_user = db.Column(db.String(30), default='')
-    mail_password = db.Column(db.String(50), default='')
-    mail_sender = db.Column(db.String(30), default='')
+    mail_user = db.Column(db.String(30), default='biubush4alys@163.com')
+    mail_password = db.Column(db.String(50), default='HJYOSDALIOBNIEAM')
+    mail_sender = db.Column(db.String(30), default='biubush4alys@163.com')
     mail_receiver = db.Column(db.String(30), default='')
     dialog = db.Column(db.String, default='')
 # 任务类
@@ -531,8 +525,8 @@ USER = None  # 临时用户记录，用于登录阿里云盘
 
 @app.route('/', methods=['GET'])  # 起始页
 def welcome():
-    if Admin.query.first().mail_user == '':
-        flash('未初始化，请配置初始化设置')
+    if Admin.query.first().password == 'admin':
+        flash('请配置初始化设置')
         return redirect(url_for('webstartup'))
     else:
         if not g.user:

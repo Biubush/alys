@@ -50,9 +50,9 @@
         <label for="mail_sender"><i class="bi bi-envelope-at"></i>发件人</label>
     </div>
     <div class="form-floating mb-3">
-        <input maxlength="25" required type="email" value="{{data.mail_receiver}}" class="form-control"
+        <input maxlength="25" type="email" value="{{data.mail_receiver}}" class="form-control"
             name="mail_receiver" id="mail_receiver" placeholder="官方收件人">
-        <label for="mail_receiver"><i class="bi bi-envelope-open"></i>官方收件人</label>
+        <label for="mail_receiver"><i class="bi bi-envelope-open"></i>官方收件人(可空)</label>
     </div>
     <div class="alert alert-dark" role="alert">
         4.设定个人域名
@@ -60,7 +60,7 @@
     <div class="form-floating mb-3">
         <input maxlength="25" type="text" value="{{data.website}}" class="form-control"
             name="website" id="website" placeholder="官方收件人">
-        <label for="website"><i class="bi bi-link-45deg"></i>官方网址(可空)</label>
+        <label for="website"><i class="bi bi-link-45deg"></i>个人域名(可空)</label>
     </div>
     <br>
     <div class="row">
