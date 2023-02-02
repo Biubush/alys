@@ -52,8 +52,8 @@
                     </div>
                     <div class="form-floating mb-3">
                         <input maxlength="15" minlength="3" required type="text" class="form-control" name="username" id="usn2"
-                            placeholder="用户名">
-                        <label for="usn2"><i class="bi bi-person-circle"></i>用户名</label>
+                            placeholder="用户名" oninput="value=value.replace(/[^\w_]/g,'')">
+                        <label for="usn2"><i class="bi bi-person-circle"></i>用户名(字母、数字、下划线)</label>
                     </div>
                     <div class="form-floating mb-3">
                         <input maxlength="40" required type="email" class="form-control" name="email" id="email"

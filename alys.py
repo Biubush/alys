@@ -971,6 +971,8 @@ def addtask():
         writeDialog(g.user.username, '添加任务【' +
                     request.form.get('name')+'】失败:名称冲突')
         return '同名任务已存在，请更改名称以避免冲突'
+    elif int(request.form.get('interval')) < 600:
+        return '非法更新频率:更新频率小于600！'
     else:
         name = request.form.get('name')
         owner = g.user.username

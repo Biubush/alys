@@ -162,10 +162,10 @@
                         <div class="row">
                             <p>5.设定更新频率</p>
                         </div>
-                        <p><small>为了更精准地更新到最新集数，需要您设置更新频率。其含义为：当到达指定时间，此任务触发时，多少秒获取一次最新集数并判断是否更新。</small></p>
+                        <p><small>为了更精准地更新到最新集数，需要您设置更新频率。其含义为：当到达指定时间，此任务触发时，每多少秒检测一次是否更新(最低600)。</small></p>
                         <div class="container">
                             <div class="input-group">
-                                <input type="number" class="form-control" min="0" max="7200" placeholder="更新频率"
+                                <input type="number" class="form-control" min="600" max="7200" placeholder="更新频率"
                                     id="interval" name="interval" oninput="if(value>7200)value=7200;if(value<0)value=0">
                                 <span class="input-group-text">单位:秒/次</span>
                             </div>
@@ -436,7 +436,9 @@
             let formData = $("#addform").serialize();
             $.post('/addtask', formData, function (response) {
                 alert(response);
-                location.reload();
+                if (response!='非法更新频率:更新频率小于600！'){
+                    location.reload();
+                }
                 $("#subbtn").removeAttr("disabled");
                 $("#subbtn").html("提交");
             });
