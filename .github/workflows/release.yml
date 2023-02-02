@@ -1,0 +1,41 @@
+name: Build and Package Project
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+
+    - name: Install dependencies
+      run: |
+        pip install aligo flask apscheduler flask_sqlalchemy
+
+    - name: Build the Flask Project
+      run: |
+        pyinstaller -D alys.py --add-data "./static:./static" --add-data "./templates:./templates"
+
+    - name: Package the Flask Project
+      run: |
+        cd dist/alys/
+        tar -czf alys_beta_linux_amd64.tar.gz *
+
+    - name: Release
+      uses: actions/upload-release-asset@v1
+      with:
+        tag_name: ${{ env.TAG_NAME }}
+        release_id: ${{ env.RELEASE_ID }}
+        asset_path: dist/alys/alys_beta_linux_amd64.tar.gz
+        asset_name: alys_beta_linux_amd64.tar.gz
+        asset_content_type: application/gz
