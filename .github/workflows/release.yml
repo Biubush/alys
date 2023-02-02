@@ -34,8 +34,8 @@ jobs:
     - name: Release
       uses: actions/upload-release-asset@v1
       with:
-        tag_name: ${{ env.TAG_NAME }}
-        release_id: ${{ env.RELEASE_ID }}
+        tag_name: beta
+        release_id: beta v0.0.1
         asset_path: dist/alys/alys_beta_linux_amd64.tar.gz
         asset_name: alys_beta_linux_amd64.tar.gz
         asset_content_type: application/gz
