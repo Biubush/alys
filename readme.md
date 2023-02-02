@@ -1,4 +1,4 @@
-![webicon](https://github.com/Biubush/img/raw/main/webicon.png)
+<img src='https://github.com/Biubush/img/raw/main/webicon.png' width=200 height=200>
 # 简介
 ## 项目功能
 
