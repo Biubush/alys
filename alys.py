@@ -587,6 +587,7 @@ def signin():
     if locateUser:
         if locateUser.password == password:
             session['username'] = username
+            writeAdminDialog(f'用户{username}于网页端上线')
             return redirect(url_for('usercenter'))
         else:
             flash("密码错误")
