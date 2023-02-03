@@ -191,10 +191,14 @@ def loginAligo(user):  # 传入User对象
         startThread(startAligo, {"owner": user.username})
         user.online = True
         db.session.commit()
-        writeDialog(user.username, "阿里云盘登录成功")
+        globals
+        if STARTUP == True:
+            writeDialog(user.username, "阿里云盘登录成功")
+        else:
+            pass
         return True
     else:
-        writeDialog(user.username, "未登录过阿里云盘或登录过期，跳过")
+        writeAdminDialog(f"用户{user.username}未找到阿里云盘数据，跳过")
         return False
 
 
@@ -202,6 +206,7 @@ def startup():  # 初始化程序
     global PORT
     global ADMIN
     global WEBSITE
+    global STARTUP
     # 创建数据库
     with app.app_context():
         if not os.path.exists("./alys.db"):
@@ -231,6 +236,7 @@ def startup():  # 初始化程序
                         aligo_count += 1
                 else:
                     ban_count += 1
+                writeDialog(user.username,"alys后台已重启或更新，为您造成的不便敬请谅解")
             writeAdminDialog('登录了'+str(aligo_count) +
                              '个用户的阿里云盘,有'+str(ban_count)+'个用户被禁而未登录')
             enable_count = 0
@@ -239,6 +245,7 @@ def startup():  # 初始化程序
                     addSchedule(task.name, task.owner)
                     enable_count += 1
             writeAdminDialog('全部任务启用完成，共启动'+str(enable_count)+'个任务')
+            STARTUP=True
 
 
 def saveQrImg(qr_link: str):  # 将阿里云盘登录的二维码保存到本地
@@ -357,7 +364,7 @@ def mainJob(owner: str, taskname: str):  # 主程序，运行任务
                     name=taskname, owner=owner).first().switch = False
                 db.session.commit()
                 writeDialog(owner=owner, content='任务【'+taskname +
-                            '】运行过程中失败:任务内部出错，可能原因:1.分享被禁；2.分享取消；3.程序出bug')
+                            '】运行过程中失败:任务内部出错，可能原因:1.分享被禁；2.分享取消；3.检测更新的频率过快；4.程序内部出bug')
                 if scheduler.get_job(job_id=taskname+'_'+owner):
                     scheduler.pause_job(job_id=taskname+'_'+owner)
                     scheduler.remove_job(job_id=taskname+'_'+owner)
@@ -367,7 +374,7 @@ def mainJob(owner: str, taskname: str):  # 主程序，运行任务
                     '【'+taskname+'】更新出错',
                     wholeText='您部署于ALYS上的任务【'
                     + taskname +
-                    "】在本次运行中遇到问题，请前往官网查看详细日志")
+                    "】在本次运行中遇到问题，任务内部出错，可能原因:\n1.分享被禁；\n2.分享取消；\n3.检测更新的频率过快；\n4.程序内部出bug\n您可前往网站测试并排查错误")
                 flag2 = False
                 break
         if not Task.query.filter_by(name=taskname, owner=owner).first().switch and flag2:
@@ -381,7 +388,7 @@ def mainJob(owner: str, taskname: str):  # 主程序，运行任务
                 '【'+taskname+'】更新出错',
                 wholeText='您部署于ALYS上的任务【'
                 + taskname +
-                "】在本次运行中遇到问题，请前往官网查看详细日志.")
+                "】在本次运行中遇到问题，运行过程中失败:任务被禁用。")
 
 
 def addSchedule(taskname: str, owner: str):  # 增加一个计划日程
@@ -520,6 +527,7 @@ FLASK = None  # Flask实例
 ALIGOS = {}  # 用于存放各个用户的阿里云盘实例
 WEBSITE = None  # 个人ALYS项目域名
 USER = None  # 临时用户记录，用于登录阿里云盘
+STARTUP = False  #标志初始化结束
 # ---------------------------------------路由--------------------------------------
 
 
