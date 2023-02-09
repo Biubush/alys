@@ -535,7 +535,8 @@ STARTUP = False  #标志初始化结束
 def welcome():
     if Admin.query.first().password == 'admin':
         flash('请配置初始化设置')
-        return redirect(url_for('webstartup'))
+        data = Admin.query.first()
+        return render_template('startup.html', data=data)
     else:
         if not g.user:
             return render_template('welcome.html')
@@ -837,30 +838,6 @@ def signout():
 @app.route('/startup', methods=['GET', 'POST'])  # 初始化
 def webstartup():
     if 'admin' in session or Admin.query.first().mail_user == '':
-        if request.method == 'POST':
-            if request.form.get('password') != 'admin':
-                admin = Admin.query.first()
-                admin.username = request.form.get('username')
-                admin.password = request.form.get('password')
-                if request.form.get('website'):
-                    admin.website = request.form.get('website')
-                admin.port = int(request.form.get('port'))
-                admin.mail_user = request.form.get('mail_user')
-                admin.mail_password = request.form.get('mail_password')
-                admin.mail_sender = request.form.get('mail_sender')
-                admin.mail_receiver = request.form.get('mail_receiver')
-                db.session.commit()
-                writeAdminDialog('后台初始化成功')
-                flash('初始化成功，即将关闭后端，请重新开启后端程序')
-                startThread(restartApp)
-                return redirect(url_for('welcome'))
-            else:
-                flash('不能使用默认管理员密码！')
-                return redirect(url_for('webstartup'))
-        else:
-            data = Admin.query.first()
-            return render_template('startup.html', data=data)
-    elif Admin.query.first().password=="admin":
         if request.method == 'POST':
             if request.form.get('password') != 'admin':
                 admin = Admin.query.first()
