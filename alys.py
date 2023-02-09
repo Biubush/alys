@@ -543,6 +543,60 @@ def welcome():
             return redirect(url_for('usercenter'))
 
 
+@app.route('/usercenter', methods=['GET'])  # 用户中心
+def usercenter():
+    if not g.user:
+        return redirect(url_for('welcome'))
+    else:
+        if 'admin' in session:
+            search_task = request.args.get('task')
+            search_user = request.args.get('user')
+            tasklist = {}
+            enabled = len(Task.query.filter_by(switch=1).all())
+            total = len(Task.query.all())
+            print(f'search_user={search_user}')
+            if search_user:
+                users = User.query.filter(
+                    User.nickname.contains(search_user)).all()
+            else:
+                users = User.query.all()
+            for user in users:
+                if search_task:
+                    tasklist[user.username] = Task.query.filter(
+                        Task.name.contains(search_task), Task.owner == user.username).all()
+                else:
+                    tasklist[user.username] = Task.query.filter_by(
+                        owner=user.username).all()
+            members = len(users)
+            online = len(User.query.filter_by(online=1).all())
+            dialog = ''
+            for line in getLastLines(g.user.dialog, 5):
+                dialog = dialog+line+'\n'
+            return render_template('admin.html', tasklist=tasklist, total=total, enabled=enabled, dialog=dialog, members=members, online=online, users=users)
+        else:
+            if g.user.baned != 1:
+                search = request.args.get('search')
+                if not search:
+                    tasks = Task.query.filter_by(owner=g.user.username).all()
+                    total = len(tasks)
+                    enabled = len(Task.query.filter_by(
+                        owner=g.user.username, switch=1).all())
+                else:
+                    tasks = Task.query.filter(Task.name.contains(
+                        search), Task.owner == g.user.username).all()
+                    total = len(tasks)
+                    enabled = len(Task.query.filter(Task.name.contains(
+                        search), Task.owner == g.user.username, Task.switch == 1).all())
+                dialog = ''
+                for line in getLastLines(g.user.dialog, 5):
+                    dialog = dialog+line+'\n'
+                # 个人中心页面
+                return render_template('usercenter.html', userdata=g.user, tasks=tasks, total=total, enabled=enabled, dialog=dialog)
+            else:
+                flash('账号被封禁，请联系管理员，邮箱地址:'+Admin.query.first().mail_receiver)
+                session.pop("username", None)
+                return redirect(url_for('welcome'))
+
 @app.route('/profile', methods=['GET', 'POST'])  # 修改个人信息
 def profile():
     if not g.user:
@@ -611,61 +665,6 @@ def signin():
         flash("查无此人，请重试")
         return redirect(url_for('welcome'))
 
-
-@app.route('/usercenter', methods=['GET'])  # 用户中心
-def usercenter():
-    if not g.user:
-        return redirect(url_for('welcome'))
-    else:
-        if 'admin' in session:
-            search_task = request.args.get('task')
-            search_user = request.args.get('user')
-            tasklist = {}
-            enabled = len(Task.query.filter_by(switch=1).all())
-            total = len(Task.query.all())
-            print(f'search_user={search_user}')
-            if search_user:
-                users = User.query.filter(
-                    User.nickname.contains(search_user)).all()
-            else:
-                users = User.query.all()
-            for user in users:
-                if search_task:
-                    tasklist[user.username] = Task.query.filter(
-                        Task.name.contains(search_task), Task.owner == user.username).all()
-                else:
-                    tasklist[user.username] = Task.query.filter_by(
-                        owner=user.username).all()
-            members = len(users)
-            online = len(User.query.filter_by(online=1).all())
-            dialog = ''
-            for line in getLastLines(g.user.dialog, 5):
-                dialog = dialog+line+'\n'
-            return render_template('admin.html', tasklist=tasklist, total=total, enabled=enabled, dialog=dialog, members=members, online=online, users=users)
-
-        else:
-            if g.user.baned != 1:
-                search = request.args.get('search')
-                if not search:
-                    tasks = Task.query.filter_by(owner=g.user.username).all()
-                    total = len(tasks)
-                    enabled = len(Task.query.filter_by(
-                        owner=g.user.username, switch=1).all())
-                else:
-                    tasks = Task.query.filter(Task.name.contains(
-                        search), Task.owner == g.user.username).all()
-                    total = len(tasks)
-                    enabled = len(Task.query.filter(Task.name.contains(
-                        search), Task.owner == g.user.username, Task.switch == 1).all())
-                dialog = ''
-                for line in getLastLines(g.user.dialog, 5):
-                    dialog = dialog+line+'\n'
-                # 个人中心页面
-                return render_template('usercenter.html', userdata=g.user, tasks=tasks, total=total, enabled=enabled, dialog=dialog)
-            else:
-                flash('账号被封禁，请联系管理员，邮箱地址:'+Admin.query.first().mail_receiver)
-                session.pop("username", None)
-                return redirect(url_for('welcome'))
 
 
 @app.route('/folder', methods=['GET'])  # 查询文件夹
@@ -838,6 +837,30 @@ def signout():
 @app.route('/startup', methods=['GET', 'POST'])  # 初始化
 def webstartup():
     if 'admin' in session or Admin.query.first().mail_user == '':
+        if request.method == 'POST':
+            if request.form.get('password') != 'admin':
+                admin = Admin.query.first()
+                admin.username = request.form.get('username')
+                admin.password = request.form.get('password')
+                if request.form.get('website'):
+                    admin.website = request.form.get('website')
+                admin.port = int(request.form.get('port'))
+                admin.mail_user = request.form.get('mail_user')
+                admin.mail_password = request.form.get('mail_password')
+                admin.mail_sender = request.form.get('mail_sender')
+                admin.mail_receiver = request.form.get('mail_receiver')
+                db.session.commit()
+                writeAdminDialog('后台初始化成功')
+                flash('初始化成功，即将关闭后端，请重新开启后端程序')
+                startThread(restartApp)
+                return redirect(url_for('welcome'))
+            else:
+                flash('不能使用默认管理员密码！')
+                return redirect(url_for('webstartup'))
+        else:
+            data = Admin.query.first()
+            return render_template('startup.html', data=data)
+    elif Admin.query.first().password=="admin":
         if request.method == 'POST':
             if request.form.get('password') != 'admin':
                 admin = Admin.query.first()
