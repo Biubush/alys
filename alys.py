@@ -202,6 +202,15 @@ def loginAligo(user):  # 传入User对象
         return False
 
 
+def update():#更新后台
+    global PORT
+    global ADMIN
+    global WEBSITE
+    ADMIN=Admin.query.first()
+    PORT=ADMIN.port
+    WEBSITE=ADMIN.website
+
+
 def startup():  # 初始化程序
     global PORT
     global ADMIN
@@ -837,26 +846,77 @@ def signout():
 
 @app.route('/startup', methods=['GET', 'POST'])  # 初始化
 def webstartup():
-    if 'admin' in session or Admin.query.first().mail_user == '':
+    if 'admin' in session or Admin.query.first().password == 'admin':
         if request.method == 'POST':
-            if request.form.get('password') != 'admin':
-                admin = Admin.query.first()
-                admin.username = request.form.get('username')
-                admin.password = request.form.get('password')
-                if request.form.get('website'):
-                    admin.website = request.form.get('website')
-                admin.port = int(request.form.get('port'))
-                admin.mail_user = request.form.get('mail_user')
-                admin.mail_password = request.form.get('mail_password')
-                admin.mail_sender = request.form.get('mail_sender')
-                admin.mail_receiver = request.form.get('mail_receiver')
-                db.session.commit()
-                writeAdminDialog('后台初始化成功')
-                flash('初始化成功，即将关闭后端，请重新开启后端程序')
-                startThread(restartApp)
-                return redirect(url_for('welcome'))
+            if request.form.get('password')==request.form.get('verifypassword'):
+                if request.form.get('password')=="":#不更改密码
+                    if Admin.query.first().password == 'admin':#但为默认密码
+                        flash('初始化失败:不能使用默认密码')
+                        return redirect(url_for('webstartup'))
+                    else:#不为默认密码
+                        if int(request.form.get('port'))==Admin.query.first().port:
+                            admin = Admin.query.first()
+                            admin.username = request.form.get('username')
+                            if request.form.get('website'):
+                                admin.website = request.form.get('website')
+                            admin.mail_user = request.form.get('mail_user')
+                            admin.mail_password = request.form.get('mail_password')
+                            admin.mail_sender = request.form.get('mail_sender')
+                            admin.mail_receiver = request.form.get('mail_receiver')
+                            db.session.commit()
+                            update()
+                            writeAdminDialog('更新后台成功')
+                            flash('更新后台成功')
+                            return redirect(url_for('welcome'))
+                        else:
+                            admin = Admin.query.first()
+                            admin.username = request.form.get('username')
+                            if request.form.get('website'):
+                                admin.website = request.form.get('website')
+                            admin.port = int(request.form.get('port'))
+                            admin.mail_user = request.form.get('mail_user')
+                            admin.mail_password = request.form.get('mail_password')
+                            admin.mail_sender = request.form.get('mail_sender')
+                            admin.mail_receiver = request.form.get('mail_receiver')
+                            db.session.commit()
+                            writeAdminDialog('后台初始化成功')
+                            flash('初始化成功，即将关闭后端，请重新开启后端程序')
+                            startThread(restartApp)
+                            return redirect(url_for('welcome'))
+                else:#更改密码
+                    if int(request.form.get('port'))==Admin.query.first().port:
+                        admin = Admin.query.first()
+                        admin.username = request.form.get('username')
+                        admin.password = request.form.get('password')
+                        if request.form.get('website'):
+                            admin.website = request.form.get('website')
+                        admin.mail_user = request.form.get('mail_user')
+                        admin.mail_password = request.form.get('mail_password')
+                        admin.mail_sender = request.form.get('mail_sender')
+                        admin.mail_receiver = request.form.get('mail_receiver')
+                        db.session.commit()
+                        update()
+                        writeAdminDialog('更新后台成功')
+                        flash('更新后台成功')
+                        return redirect(url_for('welcome'))
+                    else:
+                        admin = Admin.query.first()
+                        admin.username = request.form.get('username')
+                        admin.password = request.form.get('password')
+                        if request.form.get('website'):
+                            admin.website = request.form.get('website')
+                        admin.port = int(request.form.get('port'))
+                        admin.mail_user = request.form.get('mail_user')
+                        admin.mail_password = request.form.get('mail_password')
+                        admin.mail_sender = request.form.get('mail_sender')
+                        admin.mail_receiver = request.form.get('mail_receiver')
+                        db.session.commit()
+                        writeAdminDialog('后台初始化成功')
+                        flash('初始化成功，即将关闭后端，请重新开启后端程序')
+                        startThread(restartApp)
+                        return redirect(url_for('welcome'))
             else:
-                flash('不能使用默认管理员密码！')
+                flash('初始化失败:两次密码不一致')
                 return redirect(url_for('webstartup'))
         else:
             data = Admin.query.first()

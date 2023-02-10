@@ -11,12 +11,12 @@
         <label for="username"><i class="bi bi-person"></i>后台账号</label>
     </div>
     <div class="form-floating mb-3">
-        <input maxlength="25" required type="password" value="{{data.password}}" class="form-control" name="password"
+        <input maxlength="25" type="password" class="form-control" name="password"
             id="password1" placeholder="密码">
         <label for="password1"><i class="bi bi-key"></i>后台密码</label>
     </div>
     <div class="form-floating mb-3">
-        <input maxlength="25" required type="password" value="{{data.password}}" class="form-control"
+        <input maxlength="25" type="password" class="form-control"
             name="verifypassword" id="password2" placeholder="密码">
         <label for="password2"><i class="bi bi-key"></i>确认密码</label>
     </div>
@@ -65,7 +65,7 @@
     <br>
     <div class="row">
         <div class="btn-group">
-            <button class="btn btn-outline-dark" type="submit"><i class="bi bi-arrow-up"></i>
+            <button class="btn btn-outline-dark" type="submit" disabled id="subbtn"><i class="bi bi-arrow-up"></i>
                 提交</button>
             <button class="btn btn-outline-dark" type="button" onclick="event.preventDefault();window.history.go(-1);"><i class="bi bi-arrow-90deg-left"></i>
                 返回</button>
@@ -74,15 +74,21 @@
 </form>
 <script>
     $(document).ready(function () {
+        $("#confirmpsw").css("color", "yellow");
+        $("#confirmpsw").text("未填写密码，不更改");
         $('#password2').keyup(function () {
             let password1 = $('#password1').val();
             let password2 = $('#password2').val();
             if (password1 != password2) {
                 $("#confirmpsw").css("color", "red");
                 $("#confirmpsw").text("两次密码输入不一致");
-            } else {
+            }else if(password1==""||password2==""){
+                $("#confirmpsw").css("color", "yellow");
+                $("#confirmpsw").text("未填写密码，不更改");
+            }else {
                 $("#confirmpsw").css("color", "green");
                 $("#confirmpsw").text("密码验证成功！");
+                $("#subbtn").attr("disabled",false);
             }
         });
     });
