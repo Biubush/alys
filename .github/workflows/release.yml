@@ -2,8 +2,7 @@ name: Build and Package Project
 
 on:
   push:
-    branches:
-      - main
+    branches: [ master ]
 
 jobs:
   build:
@@ -35,7 +34,7 @@ jobs:
       uses: actions/upload-release-asset@v1
       with:
         tag_name: beta
-        release_id: beta v0.0.1
+        release_id: beta
         asset_path: dist/alys/alys_beta_linux_amd64.tar.gz
         asset_name: alys_beta_linux_amd64.tar.gz
         asset_content_type: application/gz
