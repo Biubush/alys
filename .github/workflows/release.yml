@@ -31,6 +31,12 @@ jobs:
         tar -czf alys_beta_linux_amd64.tar.gz *
 
     - name: Release
-    - uses: release-drafter/release-drafter@v5
-      env:
-        GITHUB_TOKEN: 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
+    - uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: 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
+        file:  app/build/outputs/apk/release/*.apk
+        tag: betatest
+        release_name: betatest
+        overwrite: true
+        file_glob: true
+        body: ""
