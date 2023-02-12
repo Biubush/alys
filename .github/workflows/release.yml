@@ -15,7 +15,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.8
+        python-version: 3.9
 
     - name: Install dependencies
       run: |
@@ -31,10 +31,6 @@ jobs:
         tar -czf alys_beta_linux_amd64.tar.gz *
 
     - name: Release
-      uses: actions/upload-release-asset@v1
-      with:
-        tag_name: betatest
-        release_id: betatest
-        asset_path: dist/alys/alys_beta_linux_amd64.tar.gz
-        asset_name: alys_beta_linux_amd64.tar.gz
-        asset_content_type: application/gz
+    - uses: release-drafter/release-drafter@v5
+      env:
+        GITHUB_TOKEN: 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
