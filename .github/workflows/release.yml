@@ -19,7 +19,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install aligo flask apscheduler flask_sqlalchemy
+        pip install aligo flask apscheduler flask_sqlalchemy pyinstaller
 
     - name: Build the Flask Project
       run: |
