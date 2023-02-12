@@ -30,7 +30,12 @@ jobs:
         cd dist/alys/
         tar -czf alys_beta_linux_amd64.tar.gz *
 
-    - name: Upload binaries to release
-      uses: release-drafter/release-drafter@v5
-      env:
-        GITHUB_TOKEN: SDF87T1C4T5G19746GC18536X
+    - name: Create GitHub release
+      uses: marvinpinto/action-automatic-releases@latest
+      with:
+        repo_token: SDF87T1C4T5G19746GC18536X
+        automatic_release_tag: betatest
+        title: betatest
+        prerelease: false
+        files: |
+          dist/alys/alys_beta_linux_amd64.tar.gz
