@@ -31,6 +31,6 @@ jobs:
         tar -czf alys_beta_linux_amd64.tar.gz *
 
     - name: Upload binaries to release
-      - uses: release-drafter/release-drafter@v5
+      uses: release-drafter/release-drafter@v5
         env:
           GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
