@@ -34,10 +34,14 @@ def startFlask():  # 按配置启动flask
 def startAligo(owner: str, email: str = None) -> Aligo:  # 输入用户名和邮件(可空)，登录阿里云并返回生成的阿里云对象
     globals
     if not email:
-        ALIGOS[owner] = Aligo(name=owner, show=saveQrImg, level=logging.INFO)
-        with app.app_context():
-            User.query.filter_by(username=owner).first().online = True
-            db.session.commit()
+        try:
+            ALIGOS[owner] = Aligo(name=owner, show=saveQrImg, level=logging.INFO,login_timeout=30)
+            with app.app_context():
+                User.query.filter_by(username=owner).first().online = True
+                db.session.commit()
+        except:
+            with app.app_context():
+                writeAdminDialog(f"用户{owner}扫码超时")
     else:
         ALIGOS[owner] = Aligo(name=owner, email=(
             email, '请重新登陆'), level=logging.INFO)
@@ -805,6 +809,8 @@ def signup():
                         "mail": request.form.get('email')
                     })
                     flash("注册成功！")
+                    nickname=request.form.get('nickname')
+                    writeAdminDialog(f"用户{nickname}注册成功")
                     session.pop("v-code", None)
                 else:
                     flash("两次密码输入不一致")
@@ -1233,7 +1239,12 @@ def kickoff():
                 return '下线成功'
             else:
                 writeDialog(username, '下线阿里云盘失败:当前已离线')
-                return '错误:当前离线'
+                user.online = False
+                db.session.commit()
+                if os.path.exists(str(Path.home().joinpath('.aligo'))+'/'+user.username+'.json'):
+                    os.remove(str(Path.home().joinpath('.aligo')) +
+                              '/'+user.username+'.json')
+                return '错误:当前离线，将删除登录数据，请尝试刷新网页'
         else:
             return '非法操作'
 

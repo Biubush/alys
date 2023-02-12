@@ -3,7 +3,10 @@
 {% block content %}
 <div class="text-center">
     <p>您的阿里云盘尚未登录或已离线，请扫描以下二维码进行登录操作</p>
-    <img src="" class="img-fluid" id="qrcode">
+    <div class="alert alert-warning" role="alert" id="alertdiv">
+        <strong>注意!</strong>扫码完成后需要静等两秒才能登录成功
+    </div>
+    <img src="" class="img-fluid" id="qrcode" width="300px" height="300px">
     <div class="row">
         <div class="col">
             <span class="badge" id="tipspan">null</span>
@@ -31,6 +34,11 @@
                 }
             })
         }, 1000)
+        setTimeout(function () {
+            clearInterval(t1);
+            $("#alertdiv").html("<strong>注意!</strong>扫码登录超时，请刷新重试，在30秒内进行扫码登录。");
+            $("#qrcode").attr('src', '#').load();
+        }, 32000);
     });
 </script>
 {% endblock %}
