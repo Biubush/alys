@@ -28,12 +28,13 @@ jobs:
 
     - name: Build the Flask Project
       run: |
-        mkdir alys_v0.0.${{ github.run_number }}_linux_amd64
-        pyinstaller -D alys.py --add-data "./static:./static" --add-data "./templates:./templates" --distpath alys_v0.0.${{ github.run_number }}_linux_amd64
+        mkdir dist
+        pyinstaller -D alys.py --add-data "./static:./static" --add-data "./templates:./templates" --distpath dist
 
     - name: Package the Flask Project
       run: |
-        cd alys_v0.0.${{ github.run_number }}_linux_amd64/alys
+        mv dist/alys dist/alys_v0.0.${{ github.run_number }}_linux_amd64
+        cd dist
         tar -czf alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz *
         mv alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz ~/alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz
 
