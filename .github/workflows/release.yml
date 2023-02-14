@@ -76,7 +76,7 @@ jobs:
 
     - name: Package the Flask Project
       run: |
-        tar -czf alys_${{ github.run_number }}_linux_${{ matrix.os }}.tar.gz dist/alys/*
+        tar -czf alys_${{ github.run_number }}_linux_${{ matrix.os }}.tar.gz dist/${{ matrix.os }}/*
         mkdir binary
         mv dist/alys/alys_${{ github.run_number }}_linux_${{ matrix.os }}.tar.gz binary
 
