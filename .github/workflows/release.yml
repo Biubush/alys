@@ -34,12 +34,8 @@ jobs:
 
     - name: Package the Flask Project
       run: |
-        cd dist/linux_amd64
-        tar -czf alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz *
-        ls dist/linux_amd64
-        cd ~
         mkdir binary
-        mv dist/linux_amd64/alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz binary
+        tar -czf binary/alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz dist/linux_amd64/*
 
     - name: Upload build result
       uses: actions/upload-artifact@v3
@@ -71,11 +67,8 @@ jobs:
           mkdir dist
           mkdir dist/linux_arm64
           pyinstaller -D alys.py --add-data "./static:./static" --add-data "./templates:./templates" --distpath dist/linux_arm64
-          cd dist/linux_arm64
-          tar -czf alys_v0.0.${{ github.run_number }}_linux_arm64.tar.gz *
-          cd ~
           mkdir binary
-          mv dist/linux_arm64/alys_v0.0.${{ github.run_number }}_linux_arm64.tar.gz binary
+          tar -czf binary/alys_v0.0.${{ github.run_number }}_linux_arm64.tar.gz dist/linux_arm64/*
 
     - name: Upload build result
       uses: actions/upload-artifact@v3
