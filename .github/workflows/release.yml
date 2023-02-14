@@ -35,7 +35,8 @@ jobs:
     - name: Package the Flask Project
       run: |
         mkdir binary
-        tar -czf binary/alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz dist/linux_amd64/*
+        cd dist/linux_amd64
+        tar -czf binary/alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz *
 
     - name: Upload build result
       uses: actions/upload-artifact@v3
@@ -44,8 +45,7 @@ jobs:
         path: binary
 
   linux_arm64:
-    name: Package for linux_amd64 and upload
-    needs: linux_amd64
+    name: Build for arm64
 
     strategy:
       matrix:
@@ -70,7 +70,8 @@ jobs:
           mkdir dist/linux_arm64
           pyinstaller -D alys.py --add-data "./static:./static" --add-data "./templates:./templates" --distpath dist/linux_arm64
           mkdir binary
-          tar -czf binary/alys_v0.0.${{ github.run_number }}_linux_arm64.tar.gz dist/linux_arm64/*
+          cd dist/linux_arm64
+          tar -czf binary/alys_v0.0.${{ github.run_number }}_linux_arm64.tar.gz *
 
     - name: Upload build result
       uses: actions/upload-artifact@v3
@@ -118,7 +119,7 @@ jobs:
         path: binary
 
   release:
-    name: Download back the built software and release them
+    name: Creat release
 
     needs: [ windows_x64,linux_arm64,linux_amd64 ]
     runs-on: ubuntu-latest
