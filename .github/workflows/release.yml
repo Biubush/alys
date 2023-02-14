@@ -62,7 +62,8 @@ jobs:
       with:
         base_image: raspios_lite_arm64:2022-04-04
         commands: |
-          apt install python3 pip -y
+          apt update
+          apt install python3 pip -y --fix-missing
           pip install aligo flask apscheduler flask_sqlalchemy pyinstaller
           mkdir dist
           mkdir dist/linux_arm64
