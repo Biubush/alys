@@ -44,8 +44,7 @@ name: Publish the built software
 
 on:
   push:
-    tags:
-    - '*'
+    branches: [ master ]
 
 jobs:
   linux_x64:
@@ -144,3 +143,4 @@ jobs:
         with:
           artifacts: "*"
           token: ${{ secrets.GITHUB_TOKEN }}
+          tag: "beta"
