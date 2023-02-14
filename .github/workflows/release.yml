@@ -36,6 +36,7 @@ jobs:
       run: |
         cd dist/linux_amd64
         tar -czf alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz *
+        ls dist/linux_amd64
         cd ~
         mkdir binary
         mv dist/linux_amd64/alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz binary
@@ -68,13 +69,13 @@ jobs:
           apt install python3
           pip install aligo flask apscheduler flask_sqlalchemy pyinstaller
           mkdir dist
-          mkdir dist/linux_x64
-          pyinstaller -D alys.py --add-data "./static:./static" --add-data "./templates:./templates" --distpath dist/linux_x64
-          cd dist/linux_x64/
-          tar -czf alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz *
+          mkdir dist/linux_arm64
+          pyinstaller -D alys.py --add-data "./static:./static" --add-data "./templates:./templates" --distpath dist/linux_arm64
+          cd dist/linux_arm64
+          tar -czf alys_v0.0.${{ github.run_number }}_linux_arm64.tar.gz *
           cd ~
           mkdir binary
-          mv alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz binary
+          mv dist/linux_arm64/alys_v0.0.${{ github.run_number }}_linux_arm64.tar.gz binary
 
     - name: Upload build result
       uses: actions/upload-artifact@v3
