@@ -72,7 +72,11 @@ jobs:
           mkdir binary
           tar -czf binary/alys_v0.0.${{ github.run_number }}_linux_arm64.tar.gz dist/linux_arm64/*
 
-    
+    - name: Upload build result
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-result
+        path: binary
 
   windows_x64:
     name: Package software on windows_x64 and upload
