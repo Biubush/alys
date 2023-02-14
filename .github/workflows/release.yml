@@ -5,44 +5,44 @@ on:
     branches: [ master ]
 
 jobs:
-  # linux_amd64:
-  #   name: Build for amd64
+  linux_amd64:
+    name: Build for amd64
 
-  #   strategy:
-  #     matrix:
-  #       os: [ ubuntu-latest ]
-  #   runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
 
-  #   steps:
-  #   - name: Checkout code
-  #     uses: actions/checkout@v2
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-  #   - name: Set up Python
-  #     uses: actions/setup-python@v2
-  #     with:
-  #       python-version: 3.9
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
 
-  #   - name: Install dependencies
-  #     run: |
-  #       pip install aligo flask apscheduler flask_sqlalchemy pyinstaller
+    - name: Install dependencies
+      run: |
+        pip install aligo flask apscheduler flask_sqlalchemy pyinstaller
 
-  #   - name: Build the Flask Project
-  #     run: |
-  #       mkdir dist
-  #       pyinstaller -D alys.py --add-data "./static:./static" --add-data "./templates:./templates" --distpath dist
+    - name: Build the Flask Project
+      run: |
+        mkdir dist
+        pyinstaller -D alys.py --add-data "./static:./static" --add-data "./templates:./templates" --distpath dist
 
-  #   - name: Package the Flask Project
-  #     run: |
-  #       mv dist/alys dist/alys_v0.0.${{ github.run_number }}_linux_amd64
-  #       cd dist
-  #       tar -czf alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz *
-  #       mv alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz ~/alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz
+    - name: Package the Flask Project
+      run: |
+        mv dist/alys dist/alys_v0.0.${{ github.run_number }}_linux_amd64
+        cd dist
+        tar -czf alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz *
+        mv alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz ~/alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz
 
-  #   - name: Upload build result
-  #     uses: actions/upload-artifact@v3
-  #     with:
-  #       name: build-result
-  #       path: ~/alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz
+    - name: Upload build result
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-result
+        path: ~/alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz
 
   linux_arm64:
     name: Build for arm64
@@ -61,7 +61,7 @@ jobs:
       id: build_image
       with:
         copy_artifact_path: binary
-        base_image: raspios_lite_arm64:2022-04-04
+        base_image: raspios_lite_arm64:latest
         commands: |
           apt update
           apt install python3 pip -y --fix-missing
@@ -80,50 +80,49 @@ jobs:
         name: build-result
         path: binary
 
-  # windows_x64:
-  #   name: Build for win_X64
+  windows_x64:
+    name: Build for win_X64
 
-  #   strategy:
-  #     matrix:
-  #       os: [ windows-latest ]
-  #   runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ windows-latest ]
+    runs-on: ${{ matrix.os }}
 
-  #   steps:
-  #   - name: Checkout code
-  #     uses: actions/checkout@v2
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-  #   - name: Set up Python
-  #     uses: actions/setup-python@v2
-  #     with:
-  #       python-version: 3.9
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
 
-  #   - name: Install dependencies
-  #     run: |
-  #       pip install aligo flask apscheduler flask_sqlalchemy pyinstaller
+    - name: Install dependencies
+      run: |
+        pip install aligo flask apscheduler flask_sqlalchemy pyinstaller
 
-  #   - name: Build the Flask Project
-  #     run: |
-  #       mkdir dist
-  #       pyinstaller -D alys.py --add-data "./static;./static" --add-data "./templates;./templates" --distpath dist
+    - name: Build the Flask Project
+      run: |
+        mkdir dist
+        pyinstaller -D alys.py --add-data "./static;./static" --add-data "./templates;./templates" --distpath dist
 
-  #   - name: Package the Flask Project
-  #     run: |
-  #       mv dist/alys dist/alys_v0.0.${{ github.run_number }}_windows_x64
-  #       cd dist
-  #       Compress-Archive -Path * -CompressionLevel Optimal -DestinationPath alys_v0.0.${{ github.run_number }}_windows_x64.zip
-  #       mkdir binary
-  #       mv alys_v0.0.${{ github.run_number }}_windows_x64.zip ~/alys_v0.0.${{ github.run_number }}_windows_x64.zip
+    - name: Package the Flask Project
+      run: |
+        mv dist/alys dist/alys_v0.0.${{ github.run_number }}_windows_x64
+        cd dist
+        Compress-Archive -Path * -CompressionLevel Optimal -DestinationPath alys_v0.0.${{ github.run_number }}_windows_x64.zip
+        mkdir binary
+        mv alys_v0.0.${{ github.run_number }}_windows_x64.zip ~/alys_v0.0.${{ github.run_number }}_windows_x64.zip
 
-  #   - name: Upload build result
-  #     uses: actions/upload-artifact@v3
-  #     with:
-  #       name: build-result
-  #       path: ~/alys_v0.0.${{ github.run_number }}_windows_x64.zip
+    - name: Upload build result
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-result
+        path: ~/alys_v0.0.${{ github.run_number }}_windows_x64.zip
 
   release:
     name: Creat release
-    needs: linux_arm64
-    # needs: [ windows_x64,linux_arm64,linux_amd64 ]
+    needs: [ windows_x64,linux_arm64,linux_amd64 ]
     runs-on: ubuntu-latest
 
     steps:
