@@ -1,45 +1,3 @@
-# name: Build and Package Project
-
-# on:
-#   push:
-#     branches: [ master ]
-
-# jobs:
-#   build:
-#     runs-on: ubuntu-latest
-
-#     steps:
-#     - name: Checkout code
-#       uses: actions/checkout@v2
-
-#     - name: Set up Python
-#       uses: actions/setup-python@v2
-#       with:
-#         python-version: 3.9
-
-#     - name: Install dependencies
-#       run: |
-#         pip install aligo flask apscheduler flask_sqlalchemy pyinstaller
-
-#     - name: Build the Flask Project
-#       run: |
-#         pyinstaller -D alys.py --add-data "./static:./static" --add-data "./templates:./templates"
-
-#     - name: Package the Flask Project
-#       run: |
-#         cd dist/alys/
-#         tar -czf alys_beta_linux_amd64.tar.gz *
-
-#     - name: Create GitHub release
-#       uses: marvinpinto/action-automatic-releases@latest
-#       with:
-#         repo_token: SDF87T1C4T5G19746GC18536X
-#         automatic_release_tag: beta
-#         title: 0.0.4
-#         prerelease: false
-#         files: |
-#           dist/alys/alys_beta_linux_amd64.tar.gz
-
 name: Publish the built software
 
 on:
@@ -47,8 +5,8 @@ on:
     branches: [ master ]
 
 jobs:
-  linux_x64:
-    name: Package software on linux_x64 and upload
+  linux_amd64:
+    name: Package for linux_amd64 and upload
 
     strategy:
       matrix:
@@ -76,9 +34,47 @@ jobs:
 
     - name: Package the Flask Project
       run: |
-        tar -czf alys_v0.0.${{ github.run_number }}_linux_x64.tar.gz dist/linux_x64/*
+        cd dist/linux_x64/
+        tar -czf alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz *
+        cd ~
         mkdir binary
-        mv alys_v0.0.${{ github.run_number }}_linux_x64.tar.gz binary
+        mv alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz binary
+
+    - name: Upload build result
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-result
+        path: binary
+
+  linux_arm64:
+    name: Package for linux_amd64 and upload
+    needs: linux_amd64
+
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: build
+      uses: pguyot/arm-runner-action@v2
+      id: build_image
+      with:
+        base_image: raspios_lite_arm64:2022-04-04
+        commands: |
+          apt install python3
+          pip install aligo flask apscheduler flask_sqlalchemy pyinstaller
+          mkdir dist
+          mkdir dist/linux_x64
+          pyinstaller -D alys.py --add-data "./static:./static" --add-data "./templates:./templates" --distpath dist/linux_x64
+          cd dist/linux_x64/
+          tar -czf alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz *
+          cd ~
+          mkdir binary
+          mv alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz binary
 
     - name: Upload build result
       uses: actions/upload-artifact@v3
@@ -88,7 +84,7 @@ jobs:
 
   windows_x64:
     name: Package software on windows_x64 and upload
-    needs: linux_x64
+    needs: linux_arm64
 
     strategy:
       matrix:
