@@ -28,15 +28,13 @@ jobs:
 
     - name: Build the Flask Project
       run: |
-        mkdir dist
-        mkdir dist/linux_amd64
-        pyinstaller -D alys.py --add-data "./static:./static" --add-data "./templates:./templates" --distpath dist/linux_amd64
+        mkdir alys_v0.0.${{ github.run_number }}_linux_amd64
+        pyinstaller -D alys.py --add-data "./static:./static" --add-data "./templates:./templates" --distpath alys_v0.0.${{ github.run_number }}_linux_amd64
 
     - name: Package the Flask Project
       run: |
         mkdir binary
-        cd dist/linux_amd64
-        tar -czf ~/binary/alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz *
+        tar -czf binary/alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz alys_v0.0.${{ github.run_number }}_linux_amd64/*
 
     - name: Upload build result
       uses: actions/upload-artifact@v3
@@ -66,12 +64,10 @@ jobs:
           apt update
           apt install python3 pip -y --fix-missing
           pip install aligo flask apscheduler flask_sqlalchemy pyinstaller
-          mkdir dist
-          mkdir dist/linux_arm64
-          pyinstaller -D alys.py --add-data "./static:./static" --add-data "./templates:./templates" --distpath dist/linux_arm64
+          mkdir alys_v0.0.${{ github.run_number }}_linux_arm64
+          pyinstaller -D alys.py --add-data "./static:./static" --add-data "./templates:./templates" --distpath alys_v0.0.${{ github.run_number }}_linux_arm64
           mkdir binary
-          cd dist/linux_arm64
-          tar -czf ~/binary/alys_v0.0.${{ github.run_number }}_linux_arm64.tar.gz *
+          tar -czf binary/alys_v0.0.${{ github.run_number }}_linux_arm64.tar.gz alys_v0.0.${{ github.run_number }}_linux_arm64/*
 
     - name: Upload build result
       uses: actions/upload-artifact@v3
@@ -102,13 +98,12 @@ jobs:
 
     - name: Build the Flask Project
       run: |
-        mkdir dist
-        mkdir dist/windows_x64
-        pyinstaller -D alys.py --add-data "./static;./static" --add-data "./templates;./templates" --distpath dist/windows_x64
+        mkdir alys_v0.0.${{ github.run_number }}_windows_x64
+        pyinstaller -D alys.py --add-data "./static;./static" --add-data "./templates;./templates" --distpath alys_v0.0.${{ github.run_number }}_windows_x64
 
     - name: Package the Flask Project
       run: |
-        Compress-Archive -Path dist/windows_x64/* -CompressionLevel Optimal -DestinationPath alys_v0.0.${{ github.run_number }}_windows_x64.zip
+        Compress-Archive -Path alys_v0.0.${{ github.run_number }}_windows_x64 -CompressionLevel Optimal -DestinationPath alys_v0.0.${{ github.run_number }}_windows_x64.zip
         mkdir binary
         mv alys_v0.0.${{ github.run_number }}_windows_x64.zip binary
 
