@@ -6,7 +6,7 @@ on:
 
 jobs:
   linux_amd64:
-    name: Package for linux_amd64 and upload
+    name: Build for amd64
 
     strategy:
       matrix:
@@ -44,8 +44,7 @@ jobs:
         path: binary
 
   linux_arm64:
-    name: Package for linux_amd64 and upload
-    needs: linux_amd64
+    name: Build for arm64
 
     strategy:
       matrix:
@@ -60,9 +59,11 @@ jobs:
       uses: pguyot/arm-runner-action@v2
       id: build_image
       with:
+        copy_artifact_path: binary
         base_image: raspios_lite_arm64:2022-04-04
         commands: |
-          apt install python3 pip -y
+          apt update
+          apt install python3 pip -y --fix-missing
           pip install aligo flask apscheduler flask_sqlalchemy pyinstaller
           mkdir dist
           mkdir dist/linux_arm64
@@ -77,8 +78,7 @@ jobs:
         path: binary
 
   windows_x64:
-    name: Package software on windows_x64 and upload
-    needs: linux_arm64
+    name: Build for win_X64
 
     strategy:
       matrix:
@@ -119,7 +119,7 @@ jobs:
   release:
     name: Download back the built software and release them
 
-    needs: windows_x64
+    needs: [ windows_x64,linux_arm64,linux_amd64 ]
     runs-on: ubuntu-latest
 
     steps:
