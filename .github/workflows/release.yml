@@ -44,7 +44,7 @@ jobs:
         path: binary
 
   linux_arm64:
-    name: Package for linux_amd64 and upload
+    name: Package for linux_arm64 and upload
     needs: linux_amd64
 
     strategy:
@@ -60,6 +60,7 @@ jobs:
       uses: pguyot/arm-runner-action@v2
       id: build_image
       with:
+        copy_artifact_path: binary
         base_image: raspios_lite_arm64:2022-04-04
         commands: |
           apt update
@@ -71,11 +72,7 @@ jobs:
           mkdir binary
           tar -czf binary/alys_v0.0.${{ github.run_number }}_linux_arm64.tar.gz dist/linux_arm64/*
 
-    - name: Upload build result
-      uses: actions/upload-artifact@v3
-      with:
-        name: build-result
-        path: binary
+    
 
   windows_x64:
     name: Package software on windows_x64 and upload
