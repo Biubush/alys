@@ -36,7 +36,7 @@ jobs:
       run: |
         mkdir binary
         cd dist/linux_amd64
-        tar -czf binary/alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz *
+        tar -czf ~/binary/alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz *
 
     - name: Upload build result
       uses: actions/upload-artifact@v3
@@ -71,7 +71,7 @@ jobs:
           pyinstaller -D alys.py --add-data "./static:./static" --add-data "./templates:./templates" --distpath dist/linux_arm64
           mkdir binary
           cd dist/linux_arm64
-          tar -czf binary/alys_v0.0.${{ github.run_number }}_linux_arm64.tar.gz *
+          tar -czf ~/binary/alys_v0.0.${{ github.run_number }}_linux_arm64.tar.gz *
 
     - name: Upload build result
       uses: actions/upload-artifact@v3
