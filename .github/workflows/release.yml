@@ -116,7 +116,7 @@ jobs:
 
     - name: Package the Flask Project
       run: |
-        zip alys_v0.0.${{ github.run_number }}_windows_x64.zip dist/windows_x64/*
+        Compress-Archive -Path dist/windows_x64/* -CompressionLevel Optimal -DestinationPath alys_v0.0.${{ github.run_number }}_windows_x64.zip
         mkdir binary
         mv alys_v0.0.${{ github.run_number }}_windows_x64.zip binary
 
