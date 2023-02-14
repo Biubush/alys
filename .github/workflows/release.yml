@@ -44,7 +44,8 @@ jobs:
         path: binary
 
   linux_arm64:
-    name: Build for arm64
+    name: Package for linux_amd64 and upload
+    needs: linux_amd64
 
     strategy:
       matrix:
