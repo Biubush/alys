@@ -1,12 +1,59 @@
-name: Build and Package Project
+# name: Build and Package Project
+
+# on:
+#   push:
+#     branches: [ master ]
+
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#     - name: Checkout code
+#       uses: actions/checkout@v2
+
+#     - name: Set up Python
+#       uses: actions/setup-python@v2
+#       with:
+#         python-version: 3.9
+
+#     - name: Install dependencies
+#       run: |
+#         pip install aligo flask apscheduler flask_sqlalchemy pyinstaller
+
+#     - name: Build the Flask Project
+#       run: |
+#         pyinstaller -D alys.py --add-data "./static:./static" --add-data "./templates:./templates"
+
+#     - name: Package the Flask Project
+#       run: |
+#         cd dist/alys/
+#         tar -czf alys_beta_linux_amd64.tar.gz *
+
+#     - name: Create GitHub release
+#       uses: marvinpinto/action-automatic-releases@latest
+#       with:
+#         repo_token: SDF87T1C4T5G19746GC18536X
+#         automatic_release_tag: beta
+#         title: 0.0.4
+#         prerelease: false
+#         files: |
+#           dist/alys/alys_beta_linux_amd64.tar.gz
+
+name: Publish the built software
 
 on:
   push:
     branches: [ master ]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  build-and-upload:
+    name: Package software on three platforms and upload
+
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+    runs-on: ${{ matrix.os }}
 
     steps:
     - name: Checkout code
@@ -23,19 +70,36 @@ jobs:
 
     - name: Build the Flask Project
       run: |
-        pyinstaller -D alys.py --add-data "./static:./static" --add-data "./templates:./templates"
+        mkdir dist
+        mkdir dist/${{ matrix.os }}
+        pyinstaller -D alys.py --add-data "./static:./static" --add-data "./templates:./templates" --distpath dist/${{ matrix.os }}
 
     - name: Package the Flask Project
       run: |
-        cd dist/alys/
-        tar -czf alys_beta_linux_amd64.tar.gz *
+        tar -czf alys_${{ github.run_number }}_linux_${{ matrix.os }}.tar.gz dist/alys/*
+        mkdir binary
+        mv dist/alys/alys_${{ github.run_number }}_linux_${{ matrix.os }}.tar.gz binary
 
-    - name: Create GitHub release
-      uses: marvinpinto/action-automatic-releases@latest
-      with:
-        repo_token: SDF87T1C4T5G19746GC18536X
-        automatic_release_tag: beta
-        title: 0.0.4
-        prerelease: false
-        files: |
-          dist/alys/alys_beta_linux_amd64.tar.gz
+      - name: Upload build result
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-result
+          path: binary
+
+  release:
+    name: Download back the built software and release them
+
+    needs: build-and-upload
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download back the built software
+        uses: actions/download-artifact@v3
+        with:
+          name: build-result
+
+      - name: Release software
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "*"
+          token: ${{ secrets.GITHUB_TOKEN }}
