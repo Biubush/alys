@@ -35,7 +35,7 @@ def startAligo(owner: str, email: str = None) -> Aligo:  # 输入用户名和邮
     globals
     if not email:
         try:
-            ALIGOS[owner] = Aligo(name=owner, show=saveQrImg, level=logging.INFO,login_timeout=30)
+            ALIGOS[owner] = Aligo(name=owner, show=saveQrImg, level=logging.INFO,login_timeout=60)
             with app.app_context():
                 User.query.filter_by(username=owner).first().online = True
                 db.session.commit()
@@ -44,7 +44,7 @@ def startAligo(owner: str, email: str = None) -> Aligo:  # 输入用户名和邮
                 writeAdminDialog(f"用户{owner}扫码超时")
     else:
         ALIGOS[owner] = Aligo(name=owner, email=(
-            email, '请重新登陆'), level=logging.INFO)
+            email, '请重新登陆'), level=logging.INFO,login_timeout=60)
 
 
 def writeDialog(owner: str, content: str):  # 输入用户名和日志内容，对指定用户进行日志的增操作
@@ -541,6 +541,7 @@ ALIGOS = {}  # 用于存放各个用户的阿里云盘实例
 WEBSITE = None  # 个人ALYS项目域名
 USER = None  # 临时用户记录，用于登录阿里云盘
 STARTUP = False  #标志初始化结束
+VERSION = "V0.0.41" #当前版本号
 # ---------------------------------------路由--------------------------------------
 
 
@@ -1336,6 +1337,11 @@ def unban():
             writeAdminDialog('解封用户['+username+']失败')
             return '解封失败'
 
+
+@app.route('/version', methods=['POST'])  # 获取当前版本号
+def getversion():
+    globals
+    return VERSION
 
 # ---------------------------------------主程序--------------------------------------
 if __name__ == "__main__":
