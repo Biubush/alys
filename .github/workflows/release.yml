@@ -20,7 +20,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.9
+        python-version: 3.10
 
     - name: Install dependencies
       run: |
@@ -64,7 +64,9 @@ jobs:
         base_image: raspios_lite_arm64:latest
         commands: |
           apt update
-          apt install python3 pip -y --fix-missing
+          apt install software-properties-common -y
+          add-apt-repository ppa:deadsnakes/ppa
+          apt install python3.10 pip -y --fix-missing
           pip install aligo flask apscheduler flask_sqlalchemy pyinstaller
           mkdir dist
           mkdir binary
@@ -95,7 +97,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.9
+        python-version: 3.10
 
     - name: Install dependencies
       run: |
