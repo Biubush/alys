@@ -1,5 +1,7 @@
 <img src='https://github.com/Biubush/img/raw/main/webicon.png' width=200 height=200>
 
+# 通知：由于物理服务器的迁移，线上网站暂时关闭修整，预计一周（2月26号）后恢复使用
+
 # 简介
 
 ## 项目功能
