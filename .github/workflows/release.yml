@@ -2,7 +2,8 @@ name: Publish the built software
 
 on:
   push:
-    tag: *
+    tags:
+    - '*' 
 
 jobs:
   linux_amd64:
