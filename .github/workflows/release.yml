@@ -34,7 +34,7 @@ jobs:
 
     - name: Package the Flask Project
       run: |
-        mv dist/alys dist/alys_${{ on. }}_linux_amd64
+        mv dist/alys dist/alys_v0.0.{{ github.run_number }}_linux_amd64
         cd dist
         tar -czf alys_v0.0.{{ github.run_number }}_linux_amd64.tar.gz *
         mv alys_v0.0.{{ github.run_number }}_linux_amd64.tar.gz ~/alys_v0.0.{{ github.run_number }}_linux_amd64.tar.gz
