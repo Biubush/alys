@@ -2,7 +2,7 @@ name: Publish the built software
 
 on:
   push:
-    branches: [ master ]
+    tag: *
 
 jobs:
   linux_amd64:
@@ -10,7 +10,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ debian-latest ]
+        os: [ ubuntu-18.04 ]
     runs-on: ${{ matrix.os }}
 
     steps:
