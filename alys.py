@@ -101,7 +101,7 @@ def sendHtml(mailAdress: str, receieverName: str, Title: str, wholeText: str):
     globals
     try:
         if WEBSITE=='':
-            websitehtml="<a>powerd by alys</a>"
+            websitehtml="<a>powerd by </a><a href='https://github.com/Biubush/alys'>alys</a>"
         else:
             websitehtml=f'''<a href="{WEBSITE}">前往官网</a>'''
         # 电子邮件地址和密码
@@ -160,7 +160,7 @@ def sendHtml(mailAdress: str, receieverName: str, Title: str, wholeText: str):
                             </div>
                             <hr>
                             <div class="text-center">
-                                <p><small>©Biubush 2023 仅供学习交流 切勿传播使用</small></p>
+                                <p><small>仅供学习交流 切勿传播使用</small></p>
                             </div>
                         </div>
                         <div class="col"></div>
