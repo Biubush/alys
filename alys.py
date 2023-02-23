@@ -139,10 +139,10 @@ def sendHtml(mailAdress: str, receieverName: str, Title: str, wholeText: str):
                         <div class="col-md-6 container p-4 my-4 border">
                             <div class="container text-center">
                                 <figure class="figure text-center position-relative">
-                                    <img src="https://blog.biubush.cn/upload/2023/01/webicon.png" class="figure-img img-fluid rounded" width="160"
+                                    <img src="https://pic.biubush.cn/img/2023/02/04/63dd313dda177.png" class="figure-img img-fluid rounded" width="160"
                                         height="160">
                                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger text-white">
-                                        Beta
+                                        Mail
                                     </span>
                                 </figure>
                             </div>
@@ -175,8 +175,8 @@ def sendHtml(mailAdress: str, receieverName: str, Title: str, wholeText: str):
         # 使用 MIMEText 创建邮件
         msg = MIMEText(html, 'html')
         msg['Subject'] = subject
-        msg['To'] = receieverName
-        msg['From'] = 'ALYS通知'
+        msg['To'] = mailAdress
+        msg['From'] = email
         # 连接到 SMTP 服务器
         server = smtplib.SMTP(host=mail_host,port=25)
         server.starttls()
