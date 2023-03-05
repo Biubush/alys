@@ -1,7 +1,7 @@
 <img src='https://github.com/Biubush/img/raw/main/webicon.png' width=200 height=200>
 
 # 通知:
-## 暂无
+## 最近忙于学业，无限期推迟更新....
 
 # 简介
 
