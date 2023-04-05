@@ -1,4 +1,4 @@
-name: Build and Release
+name: Publish the built software
 
 on:
   create:
@@ -6,35 +6,135 @@ on:
       - 'v*' # 监听以 'v' 开头的标签
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  linux_amd64:
+    name: Build for amd64
+
     strategy:
       matrix:
-        platform: [arm64, amd64, windows-latest]
+        os: [ ubuntu-18.04 ]
+    runs-on: ${{ matrix.os }}
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-      
-    - name: Setup Python
+
+    - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.8 # 使用 Python 3.8
-          
+        python-version: 3.9
+
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
         pip install aligo flask apscheduler flask_sqlalchemy pyinstaller
-      
-    - name: Build binary
+
+    - name: Build the Flask Project
       run: |
-        pyinstaller -D --add-data "static:static" --add-data "templates:templates" alys.py
-        tar -czvf alys-${{ github.ref }}-$PLATFORM.tar.gz dist/ # 使用 tag 和平台信息构建文件名
-      env:
-        PLATFORM: ${{ matrix.platform }} # 选择平台
-      
-    - name: Upload release asset
-      uses: actions/upload-release-asset@v1
+        mkdir dist
+        pyinstaller -D alys.py --add-data "./static:./static" --add-data "./templates:./templates" --distpath dist
+
+    - name: Package the Flask Project
+      run: |
+        mv dist/alys dist/alys_${{ github.ref }}_linux_amd64
+        cd dist
+        tar -czf alys_${{ github.ref }}_linux_amd64.tar.gz *
+        mv alys_${{ github.ref }}_linux_amd64.tar.gz ~/alys_${{ github.ref }}_linux_amd64.tar.gz
+
+    - name: Upload build result
+      uses: actions/upload-artifact@v3
       with:
-        asset_path: ./alys-${{ github.ref }}-$PLATFORM.tar.gz # 上传文件
-        asset_name: alys-${{ github.ref }}-$PLATFORM.tar.gz
-        tag_name: ${{ github.ref }} # 发布标签
+        name: build-result
+        path: ~/alys_${{ github.ref }}_linux_amd64.tar.gz
+
+  linux_arm64:
+    name: Build for arm64
+
+    strategy:                     
+      matrix:
+        os: [ ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: build
+      uses: pguyot/arm-runner-action@v2
+      id: build_image
+      with:
+        copy_artifact_path: binary
+        base_image: raspios_lite_arm64:latest
+        commands: |
+          apt update
+          apt install python3 pip -y --fix-missing
+          pip install aligo flask apscheduler flask_sqlalchemy pyinstaller
+          mkdir dist
+          mkdir binary
+          pyinstaller -D alys.py --add-data "./static:./static" --add-data "./templates:./templates" --distpath dist
+          mv dist/alys dist/alys_${{ github.ref }}_linux_arm64
+          cd dist
+          tar -czf alys_${{ github.ref }}_linux_arm64.tar.gz *
+          mv alys_${{ github.ref }}_linux_arm64.tar.gz ../binary/alys_${{ github.ref }}_linux_arm64.tar.gz
+
+    - name: Upload build result
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-result
+        path: binary
+
+  windows_x64:
+    name: Build for win_X64
+
+    strategy:
+      matrix:
+        os: [ windows-latest ]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+
+    - name: Install dependencies
+      run: |
+        pip install aligo flask apscheduler flask_sqlalchemy pyinstaller
+
+    - name: Build the Flask Project
+      run: |
+        mkdir dist
+        pyinstaller -D alys.py --add-data "./static;./static" --add-data "./templates;./templates" --distpath dist
+
+    - name: Package the Flask Project
+      run: |
+        mv dist/alys dist/alys_${{ github.ref }}_windows_x64
+        cd dist
+        Compress-Archive -Path * -CompressionLevel Optimal -DestinationPath alys_${{ github.ref }}_windows_x64.zip
+        mkdir binary
+        mv alys_${{ github.ref }}_windows_x64.zip ~/alys_${{ github.ref }}_windows_x64.zip
+
+    - name: Upload build result
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-result
+        path: ~/alys_${{ github.ref }}_windows_x64.zip
+
+  release:
+    name: Creat release
+    needs: [ windows_x64,linux_arm64,linux_amd64 ]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download back the built software
+        uses: actions/download-artifact@v3
+        with:
+          name: build-result
+
+      - name: Release software
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "*"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref }}
