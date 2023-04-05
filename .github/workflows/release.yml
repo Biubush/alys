@@ -34,16 +34,16 @@ jobs:
 
     - name: Package the Flask Project
       run: |
-        mv dist/alys dist/alys_v0.0.${{ github.run_number }}_linux_amd64
+        mv dist/alys dist/alys_${GITHUB_REF#refs/tags/}_linux_amd64
         cd dist
-        tar -czf alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz *
-        mv alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz ~/alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz
+        tar -czf alys_${GITHUB_REF#refs/tags/}_linux_amd64.tar.gz *
+        mv alys_${GITHUB_REF#refs/tags/}_linux_amd64.tar.gz ~/alys_${GITHUB_REF#refs/tags/}_linux_amd64.tar.gz
 
     - name: Upload build result
       uses: actions/upload-artifact@v3
       with:
         name: build-result
-        path: ~/alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz
+        path: ~/alys_${GITHUB_REF#refs/tags/}_linux_amd64.tar.gz
 
   linux_arm64:
     name: Build for arm64
@@ -70,10 +70,10 @@ jobs:
           mkdir dist
           mkdir binary
           pyinstaller -D alys.py --add-data "./static:./static" --add-data "./templates:./templates" --distpath dist
-          mv dist/alys dist/alys_v0.0.${{ github.run_number }}_linux_arm64
+          mv dist/alys dist/alys_${GITHUB_REF#refs/tags/}_linux_arm64
           cd dist
-          tar -czf alys_v0.0.${{ github.run_number }}_linux_arm64.tar.gz *
-          mv alys_v0.0.${{ github.run_number }}_linux_arm64.tar.gz ../binary/alys_v0.0.${{ github.run_number }}_linux_arm64.tar.gz
+          tar -czf alys_${GITHUB_REF#refs/tags/}_linux_arm64.tar.gz *
+          mv alys_${GITHUB_REF#refs/tags/}_linux_arm64.tar.gz ../binary/alys_${GITHUB_REF#refs/tags/}_linux_arm64.tar.gz
 
     - name: Upload build result
       uses: actions/upload-artifact@v3
@@ -109,17 +109,17 @@ jobs:
 
     - name: Package the Flask Project
       run: |
-        mv dist/alys dist/alys_v0.0.${{ github.run_number }}_windows_x64
+        mv dist/alys dist/alys_${GITHUB_REF#refs/tags/}_windows_x64
         cd dist
-        Compress-Archive -Path * -CompressionLevel Optimal -DestinationPath alys_v0.0.${{ github.run_number }}_windows_x64.zip
+        Compress-Archive -Path * -CompressionLevel Optimal -DestinationPath alys_${GITHUB_REF#refs/tags/}_windows_x64.zip
         mkdir binary
-        mv alys_v0.0.${{ github.run_number }}_windows_x64.zip ~/alys_v0.0.${{ github.run_number }}_windows_x64.zip
+        mv alys_${GITHUB_REF#refs/tags/}_windows_x64.zip ~/alys_${GITHUB_REF#refs/tags/}_windows_x64.zip
 
     - name: Upload build result
       uses: actions/upload-artifact@v3
       with:
         name: build-result
-        path: ~/alys_v0.0.${{ github.run_number }}_windows_x64.zip
+        path: ~/alys_${GITHUB_REF#refs/tags/}_windows_x64.zip
 
   release:
     name: Creat release
@@ -137,4 +137,4 @@ jobs:
         with:
           artifacts: "*"
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag: v0.0.${{ github.run_number }}
+          tag: ${GITHUB_REF#refs/tags/}
