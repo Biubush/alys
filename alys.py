@@ -257,6 +257,8 @@ def startup():  # 初始化程序
                 if task.share_id and task.switch == 1:
                     addSchedule(task.name, task.owner)
                     enable_count += 1
+                if task.onrunning == 1:
+                    mainJob( owner=task.owner,taskname=task.name)
             writeAdminDialog('全部任务启用完成，共启动'+str(enable_count)+'个任务')
             STARTUP=True
 
@@ -357,6 +359,7 @@ def mainJob(owner: str, taskname: str):  # 主程序，运行任务
                     if not flag:
                         writeDialog(owner=owner, content='任务【' +
                                     taskname+'】进入循环等待...')
+                        task.onrunning=True
                         flag = True
                     time.sleep(task.interval)
                 else:
@@ -371,6 +374,7 @@ def mainJob(owner: str, taskname: str):  # 主程序，运行任务
                         + task.folder_name +
                         "}中，请注意查收！\n感谢您对ALYS的支持与信赖，我们将持续提供稳定便捷的服务!"
                     )
+                    task.onrunning=False
                     break
             except:
                 Task.query.filter_by(
@@ -389,8 +393,10 @@ def mainJob(owner: str, taskname: str):  # 主程序，运行任务
                     + taskname +
                     "】在本次运行中遇到问题，任务内部出错，可能原因:\n1.分享被禁；\n2.分享取消；\n3.检测更新的频率过快；\n4.程序内部出bug\n您可前往网站测试并排查错误")
                 flag2 = False
+                task.onrunning=False
                 break
         if not Task.query.filter_by(name=taskname, owner=owner).first().switch and flag2:
+            task.onrunning=False
             writeDialog(owner=owner, content='任务【'+taskname+'】运行过程中失败:任务被禁用.')
             if scheduler.get_job(job_id=taskname+'_'+owner):
                 scheduler.pause_job(job_id=taskname+'_'+owner)
@@ -402,6 +408,7 @@ def mainJob(owner: str, taskname: str):  # 主程序，运行任务
                 wholeText='您部署于ALYS上的任务【'
                 + taskname +
                 "】在本次运行中遇到问题，运行过程中失败:任务被禁用。")
+        db.session.commit()
 
 
 def addSchedule(taskname: str, owner: str):  # 增加一个计划日程
@@ -506,6 +513,7 @@ class Admin(db.Model):
 
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    onrunning=db.Column(db.Boolean,default=False) #是否正在运行
     owner = db.Column(db.String(15))  # 所有者
     name = db.Column(db.String(30))  # 任务名称
     switch = db.Column(db.Boolean, default=False)  # 是否启用
@@ -541,7 +549,7 @@ ALIGOS = {}  # 用于存放各个用户的阿里云盘实例
 WEBSITE = None  # 个人ALYS项目域名
 USER = None  # 临时用户记录，用于登录阿里云盘
 STARTUP = False  #标志初始化结束
-VERSION = "V0.0.54" #当前版本号
+VERSION = "V0.0.55" #当前版本号
 # ---------------------------------------路由--------------------------------------
 
 
@@ -796,8 +804,12 @@ def sendcode():
 def signup():
     if not session.get('v-code'):
         flash('请先发送验证码')
+        return redirect(url_for('welcome'))
     elif request.form.get('vcode') != session['v-code']:
         flash("验证码出错")
+        return redirect(url_for('welcome'))
+    elif request.form.get('username').isdigit():
+        flash("用户名不能为纯数字")
         return redirect(url_for('welcome'))
     else:
         if not User.query.filter_by(username=request.form.get('username')).first():
@@ -1345,6 +1357,12 @@ def getversion():
 
 # ---------------------------------------主程序--------------------------------------
 if __name__ == "__main__":
+    # 更新表结构(一次性)
+    with app.app_context():
+        tasks=Task.query.all()
+        for task in tasks:
+            task.onrunning=False
+        db.session.commit()
     # 设定Scheduler日程器
     scheduler = BackgroundScheduler(timezone='Asia/Shanghai')
     scheduler.start()

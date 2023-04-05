@@ -31,8 +31,8 @@
         </div>
         <br>
         <div class="row">
-            <div class="text-center"  data-bs-toggle="modal"
-            data-bs-target="#fetchModal"><span class="badge rounded-pill text-bg-secondary"><small>找回账号</small></span></div>
+            <div class="text-center" data-bs-toggle="modal" data-bs-target="#fetchModal"><span
+                    class="badge rounded-pill text-bg-secondary"><small>找回账号</small></span></div>
         </div>
     </form>
 </div>
@@ -46,14 +46,17 @@
             <div class="modal-body">
                 <form action="/signup" method="post">
                     <div class="form-floating mb-3">
-                        <input maxlength="15" minlength="2" required type="text" class="form-control" name="nickname" id="nknm"
-                            placeholder="昵称">
+                        <input maxlength="15" minlength="2" required type="text" class="form-control" name="nickname"
+                            id="nknm" placeholder="昵称">
                         <label for="nknm"><i class="bi bi-balloon-heart-fill"></i>昵称</label>
                     </div>
                     <div class="form-floating mb-3">
-                        <input maxlength="15" minlength="3" required type="text" class="form-control" name="username" id="usn2"
-                            placeholder="用户名" oninput="value=value.replace(/[^\w_]/g,'')">
-                        <label for="usn2"><i class="bi bi-person-circle"></i>用户名(字母、数字、下划线)</label>
+                        <input maxlength="15" minlength="3" required type="text" class="form-control" name="username"
+                            id="usn2" placeholder="用户名" oninput="value=value.replace(/[^\w_]/g,'')">
+                        <label for="usn2"><i class="bi bi-person-circle"></i>用户名(字母、数字、下划线组合)</label>
+                    </div>
+                    <div class="text-start">
+                        <p id="confirmusn"><small></small></p>
                     </div>
                     <div class="form-floating mb-3">
                         <input maxlength="40" required type="email" class="form-control" name="email" id="email"
@@ -64,14 +67,14 @@
                         <p id="confirmmail"><small></small></p>
                     </div>
                     <div class="form-floating">
-                        <input maxlength="40" minlength="6" required type="password" class="form-control" name="password" id="psw2"
-                            placeholder="密码">
+                        <input maxlength="40" minlength="6" required type="password" class="form-control"
+                            name="password" id="psw2" placeholder="密码">
                         <label for="psw2"><i class="bi bi-lock-fill"></i>密码</label>
                     </div>
                     <br>
                     <div class="form-floating">
-                        <input maxlength="40" minlength="6" required type="password" class="form-control" name="vpassword" id="psw3"
-                            placeholder="确认密码">
+                        <input maxlength="40" minlength="6" required type="password" class="form-control"
+                            name="vpassword" id="psw3" placeholder="确认密码">
                         <label for="psw3"><i class="bi bi-lock-fill"></i>确认密码</label>
                     </div>
                     <div class="text-start">
@@ -176,6 +179,18 @@
         $("#confirmmail2").text("邮箱格式不正确");
         $("#confirmpsw").css("color", "red");
         $("#confirmpsw").text("两次密码输入不一致");
+        $("#confirmusn").css("color", "red");
+        $("#confirmusn").text("用户名格式不正确");
+        $("#usn2").on("input", function () {
+            var value = $(this).val();
+            if (/^\d+$/.test(value)) {
+                $("#confirmusn").css("color", "red");
+                $("#confirmusn").text("用户名格式不正确");
+            } else {
+                $("#confirmusn").css("color", "green");
+                $("#confirmusn").text("用户名格式合法！");
+            }
+        });
         $('#email').keyup(function () {
             let email = $(this).val();
             let pattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
@@ -213,14 +228,14 @@
             $("#sendVcode").attr("disabled", true);
             event.preventDefault();
             let mailAdress = $("#email").val()
-            let verifyMail=$("#confirmmail").text()
-            if (mailAdress==""){
+            let verifyMail = $("#confirmmail").text()
+            if (mailAdress == "") {
                 alert('邮箱为空');
                 $("#sendVcode").removeAttr("disabled");
-            }else if(verifyMail=="邮箱格式不正确"){
+            } else if (verifyMail == "邮箱格式不正确") {
                 alert("邮箱格式非法");
                 $("#sendVcode").removeAttr("disabled");
-            }else{
+            } else {
                 let rawdata = {
                     "mailAdress": mailAdress
                 }
@@ -241,14 +256,14 @@
             $("#sendVcode2").attr("disabled", true);
             event.preventDefault();
             let mailAdress = $("#email2").val();
-            let verifyMail=$("#confirmmail2").text();
-            if (mailAdress==""){
+            let verifyMail = $("#confirmmail2").text();
+            if (mailAdress == "") {
                 alert('邮箱为空');
                 $("#sendVcode2").removeAttr("disabled");
-            }else if(verifyMail=="邮箱格式不正确"){
+            } else if (verifyMail == "邮箱格式不正确") {
                 alert("邮箱格式非法");
                 $("#sendVcode2").removeAttr("disabled");
-            }else{
+            } else {
                 let rawdata = {
                     "mailAdress": mailAdress
                 }
