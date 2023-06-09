@@ -126,15 +126,15 @@ jobs:
       run: |
         mv dist/alys dist/alys_${{ steps.extract_tag.outputs.tag_name }}_windows_x64
         cd dist
-        Compress-Archive -Path * -CompressionLevel Optimal -DestinationPath alys_${{ steps.extract_tag.outputs.tag_name }}_windows_x64.zip
+        tar -czf alys_${{ steps.extract_tag.outputs.tag_name }}_windows_x64.tar.gz *
         mkdir binary
-        mv alys_${{ steps.extract_tag.outputs.tag_name }}_windows_x64.zip ~/alys_${{ steps.extract_tag.outputs.tag_name }}_windows_x64.zip
+        mv alys_${{ steps.extract_tag.outputs.tag_name }}_windows_x64.tar.gz ~/alys_${{ steps.extract_tag.outputs.tag_name }}_windows_x64.tar.gz
 
     - name: Upload build result
       uses: actions/upload-artifact@v3
       with:
         name: build-result
-        path: ~/alys_${{ steps.extract_tag.outputs.tag_name }}_windows_x64.zip
+        path: ~/alys_${{ steps.extract_tag.outputs.tag_name }}_windows_x64.tar.gz
 
   release:
     name: Creat release
