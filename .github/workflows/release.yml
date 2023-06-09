@@ -11,16 +11,18 @@ jobs:
 
     strategy:
       matrix:
-        os: [ ubuntu-18.04 ]
+        os: [ ubuntu-22.04 ]
     runs-on: ${{ matrix.os }}
 
     steps:
-    - name: Extract tag name
+    - name: Extract Tag Name
       id: extract_tag
-      run: echo "::set-output name=tag::${GITHUB_REF#refs/tags/}"
+      run: echo "::set-output name=tag_name::${GITHUB_REF#refs/tags/}"
 
-    - name: Use tag name in subsequent steps
-      run: echo "Tag name is ${{ steps.extract_tag.outputs.tag }}"
+    - name: Use Tag Name
+      run: |
+        echo "Tag name: ${{ steps.extract_tag.outputs.tag_name }}"
+        # 在这里可以使用 ${{ steps.extract_tag.outputs.tag_name }} 变量进行后续操作
 
     - name: Checkout code
       uses: actions/checkout@v2
@@ -41,16 +43,16 @@ jobs:
 
     - name: Package the Flask Project
       run: |
-        mv dist/alys dist/alys_${{ steps.extract_tag.outputs.tag }}_linux_amd64
+        mv dist/alys dist/alys_${{ steps.extract_tag.outputs.tag_name }}_linux_amd64
         cd dist
-        tar -czf alys_${{ steps.extract_tag.outputs.tag }}_linux_amd64.tar.gz *
-        mv alys_${{ steps.extract_tag.outputs.tag }}_linux_amd64.tar.gz ~/alys_${{ steps.extract_tag.outputs.tag }}_linux_amd64.tar.gz
+        tar -czf alys_${{ steps.extract_tag.outputs.tag_name }}_linux_amd64.tar.gz *
+        mv alys_${{ steps.extract_tag.outputs.tag_name }}_linux_amd64.tar.gz ~/alys_${{ steps.extract_tag.outputs.tag_name }}_linux_amd64.tar.gz
 
     - name: Upload build result
       uses: actions/upload-artifact@v3
       with:
         name: build-result
-        path: ~/alys_${{ steps.extract_tag.outputs.tag }}_linux_amd64.tar.gz
+        path: ~/alys_${{ steps.extract_tag.outputs.tag_name }}_linux_amd64.tar.gz
 
   linux_arm64:
     name: Build for arm64
@@ -61,12 +63,14 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - name: Extract tag name
+    - name: Extract Tag Name
       id: extract_tag
-      run: echo "::set-output name=tag::${GITHUB_REF#refs/tags/}"
+      run: echo "::set-output name=tag_name::${GITHUB_REF#refs/tags/}"
 
-    - name: Use tag name in subsequent steps
-      run: echo "Tag name is ${{ steps.extract_tag.outputs.tag }}"
+    - name: Use Tag Name
+      run: |
+        echo "Tag name: ${{ steps.extract_tag.outputs.tag_name }}"
+        # 在这里可以使用 ${{ steps.extract_tag.outputs.tag_name }} 变量进行后续操作
 
     - name: Checkout code
       uses: actions/checkout@v2
@@ -84,10 +88,10 @@ jobs:
           mkdir dist
           mkdir binary
           pyinstaller -D alys.py --add-data "./static:./static" --add-data "./templates:./templates" --distpath dist
-          mv dist/alys dist/alys_${{ steps.extract_tag.outputs.tag }}_linux_arm64
+          mv dist/alys dist/alys_${{ steps.extract_tag.outputs.tag_name }}_linux_arm64
           cd dist
-          tar -czf alys_${{ steps.extract_tag.outputs.tag }}_linux_arm64.tar.gz *
-          mv alys_${{ steps.extract_tag.outputs.tag }}_linux_arm64.tar.gz ../binary/alys_${{ steps.extract_tag.outputs.tag }}_linux_arm64.tar.gz
+          tar -czf alys_${{ steps.extract_tag.outputs.tag_name }}_linux_arm64.tar.gz *
+          mv alys_${{ steps.extract_tag.outputs.tag_name }}_linux_arm64.tar.gz ../binary/alys_${{ steps.extract_tag.outputs.tag_name }}_linux_arm64.tar.gz
 
     - name: Upload build result
       uses: actions/upload-artifact@v3
@@ -104,12 +108,14 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - name: Extract tag name
+    - name: Extract Tag Name
       id: extract_tag
-      run: echo "::set-output name=tag::${GITHUB_REF#refs/tags/}"
+      run: echo "::set-output name=tag_name::${GITHUB_REF#refs/tags/}"
 
-    - name: Use tag name in subsequent steps
-      run: echo "Tag name is ${{ steps.extract_tag.outputs.tag }}"
+    - name: Use Tag Name
+      run: |
+        echo "Tag name: ${{ steps.extract_tag.outputs.tag_name }}"
+        # 在这里可以使用 ${{ steps.extract_tag.outputs.tag_name }} 变量进行后续操作
 
     - name: Checkout code
       uses: actions/checkout@v2
@@ -130,17 +136,17 @@ jobs:
 
     - name: Package the Flask Project
       run: |
-        mv dist/alys dist/alys_${{ steps.extract_tag.outputs.tag }}_windows_x64
+        mv dist/alys dist/alys_${{ steps.extract_tag.outputs.tag_name }}_windows_x64
         cd dist
-        Compress-Archive -Path * -CompressionLevel Optimal -DestinationPath alys_${{ steps.extract_tag.outputs.tag }}_windows_x64.zip
+        Compress-Archive -Path * -CompressionLevel Optimal -DestinationPath alys_${{ steps.extract_tag.outputs.tag_name }}_windows_x64.zip
         mkdir binary
-        mv alys_${{ steps.extract_tag.outputs.tag }}_windows_x64.zip ~/alys_${{ steps.extract_tag.outputs.tag }}_windows_x64.zip
+        mv alys_${{ steps.extract_tag.outputs.tag_name }}_windows_x64.zip ~/alys_${{ steps.extract_tag.outputs.tag_name }}_windows_x64.zip
 
     - name: Upload build result
       uses: actions/upload-artifact@v3
       with:
         name: build-result
-        path: ~/alys_${{ steps.extract_tag.outputs.tag }}_windows_x64.zip
+        path: ~/alys_${{ steps.extract_tag.outputs.tag_name }}_windows_x64.zip
 
   release:
     name: Creat release
@@ -148,13 +154,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      
-      - name: Extract tag name
+      - name: Extract Tag Name
         id: extract_tag
-        run: echo "::set-output name=tag::${GITHUB_REF#refs/tags/}"
-
-      - name: Use tag name in subsequent steps
-        run: echo "Tag name is ${{ steps.extract_tag.outputs.tag }}"
+        run: echo "::set-output name=tag_name::${GITHUB_REF#refs/tags/}"
+  
+      - name: Use Tag Name
+        run: |
+          echo "Tag name: ${{ steps.extract_tag.outputs.tag_name }}"
+          # 在这里可以使用 ${{ steps.extract_tag.outputs.tag_name }} 变量进行后续操作
 
       - name: Download back the built software
         uses: actions/download-artifact@v3
@@ -166,4 +173,4 @@ jobs:
         with:
           artifacts: "*"
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ steps.extract_tag.outputs.tag }}
+          tag: ${{ steps.extract_tag.outputs.tag_name }}
