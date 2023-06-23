@@ -139,7 +139,7 @@ def sendHtml(mailAdress: str, receieverName: str, Title: str, wholeText: str):
                         <div class="col-md-6 container p-4 my-4 border">
                             <div class="container text-center">
                                 <figure class="figure text-center position-relative">
-                                    <img src="https://pic.biubush.cn/img/2023/02/04/63dd313dda177.png" class="figure-img img-fluid rounded" width="160"
+                                    <img src="https://pic.biubush.cn/i/2023/05/18/6465efdcb8954.png" class="figure-img img-fluid rounded" width="160"
                                         height="160">
                                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger text-white">
                                         Mail
@@ -541,7 +541,7 @@ ALIGOS = {}  # 用于存放各个用户的阿里云盘实例
 WEBSITE = None  # 个人ALYS项目域名
 USER = None  # 临时用户记录，用于登录阿里云盘
 STARTUP = False  #标志初始化结束
-VERSION = "V0.0.54" #当前版本号
+VERSION = "V0.0.55" #当前版本号
 # ---------------------------------------路由--------------------------------------
 
 
