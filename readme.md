@@ -20,9 +20,9 @@
 - [x] 有限的管理员权限，管理员只有查、删功能，无法对用户的订阅进行写操作
 - [x] 简洁的用户页面，学习成本低，操作一目了然
 - [x] 在添加订阅页面支持创建文件夹
-- 用户间的订阅内容分享
-- 更加完善的隐私限制
-- 用户的订阅计划归档分类
+- [ ]用户间的订阅内容分享
+- [ ]更加完善的隐私限制
+- [ ]用户的订阅计划归档分类
 
 2. 站长功能
 
@@ -40,113 +40,7 @@
 
 ## 详细信息
 
-详细使用请查看本人博客文章:[在线文档](https://blog.biubush.cn/archives/alys)
-
-## 用户使用
-
-### 注册并登录
-
-首次进入网站请注册账号并登录
-
-登录完毕请点击下方的"登录阿里云盘"，按照提示扫码登录
-
-![login](https://github.com/Biubush/img/raw/main/login.png)
-
-### 添加任务
-
-点击搜索栏左侧的添加按钮，添加你的订阅
-
-![addbtn](https://github.com/Biubush/img/raw/main/addbtn.png)
-
-按照提示填写信息（注意，选中文件夹后务必点击选中按钮）
-
-![addsub](https://github.com/Biubush/img/raw/main/addsub.png)
-
-> 注意:即时测试按钮的作用是在你不确定自己的订阅是否有效时，即时运行一遍，给予你是否可用的反馈。
-
-其余功能的使用基本可用凭借直觉进行操作，这也是使用web交互界面的初衷。
-
-## 管理员使用
-
-### 初始化
-
-本项目默认部署在本地8587端口，运行程序后访问本机ip:8587即可访问
-
-默认管理员账户为：
-
-- 用户名:admin
-- 密码:admin
-
-首次启动程序将进行初始化配置，请注意按要求进行填写信息
-
-![startup1](https://github.com/Biubush/img/raw/main/startup1.png)
-
-注意，alys不允许你使用默认的管理员密码admin，为保障安全请务必更改
-
-~~如果不清楚如何开启smtp服务请参考[这篇文章](https://zhuanlan.zhihu.com/p/551399559)~~
-
-> 现已内置邮箱服务器，部署个人版无需自行配置。但出于安全考虑仍建议各位使用自己的邮件服务器。
-
-初始化完毕后按照提示重新运行后台程序
-
-![startup2](https://github.com/Biubush/img/raw/main/startup2.png)
-
-### 管理后台
-
-使用你的管理员账户登录，即可进入后台页面：
-
-![adminlog](https://github.com/Biubush/img/raw/main/adminlog.png)
-
-你可以清晰看到用户的每一步敏感操作
-
-![manager](https://github.com/Biubush/img/raw/main/manager.png)
-
-你可以查看并管理用户的状态，控制其阿里云盘是否登录，封禁和解封，删除该用户
-
-你还可以查看每一个用户拥有的订阅任务，并管理其任务状态。
-
-> 值得注意的是，为了保护用户的权益（其实就是懒），你无法对任务内容进行写操作！只能查看任务，对任务进行删除、禁用、启用操作！
-
-# 部署个人版
-
-## 二进制文件（即开即用）
-
-去[release页面](https://github.com/Biubush/alys/releases)找到适合你内核版本的二进制压缩包，并下载解压。进入你的文件夹，输入:
-
-```bash
-chmod +x alys #给予权限
-./alys #启动程序
-```
-
-windows版直接下载zip压缩包然后双击运行exe文件即可
-> 注意，windows版可能打开文件时会卡住或访问不了页面，此时在终端多次按下回车即可解决
-
-## python脚本（体积更小）
-
-本项目使用到的第三方库：
-1. [aligo](https://github.com/foyoux/aligo)，简单、易用、可扩展的阿里云盘 API 接口库
-2. [flask](https://github.com/pallets/flask)，python网页程序框架
-3. [apscheduler](https://github.com/agronholm/apscheduler)，定时计划库
-4. [flask_sqlalchemy](https://github.com/pallets-eco/flask-sqlalchemy)，flask数据库组件
-
-欲在本地运行python脚本，首先克隆此仓库：
-
-```bash
-git clone https://github.com/Biubush/alys #克隆仓库
-cd alys #进入仓库
-```
-
-安装第三方模块（建议使用virtualenv创建独立环境后安装）:
-
-```bash
-pip install aligo flask apscheduler flask_sqlalchemy
-```
-
-运行程序：
-
-```bash
-python3 alys.py
-```
+需要部署个人版以及详细使用请查看本人博客文章:[在线文档](https://blog.biubush.cn/archives/alys)
 
 # 后记
 
