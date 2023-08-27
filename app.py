@@ -470,6 +470,7 @@ def mainJob(owner: str, taskname: str):  # 主程序，运行任务
             not Task.query.filter_by(name=taskname, owner=owner).first().switch
             and flag2
         ):
+            user = User.query.filter(User.username == owner).first()
             writeDialog(owner=owner, content="任务【" + taskname + "】运行过程中失败:任务被禁用.")
             if scheduler.get_job(job_id=taskname + "_" + owner):
                 scheduler.pause_job(job_id=taskname + "_" + owner)
