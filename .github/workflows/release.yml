@@ -8,13 +8,13 @@ on:
 jobs:
   linux_amd64:
     name: Build for amd64
-
-    strategy:
-      matrix:
-        os: [ ubuntu-18.04 ]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-20.04
 
     steps:
+    - name: Extract Tag Name
+      id: extract_tag
+      run: echo "::set-output name=tag_name::${GITHUB_REF#refs/tags/}"
+
     - name: Checkout code
       uses: actions/checkout@v2
 
@@ -25,35 +25,35 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install aligo flask apscheduler flask_sqlalchemy pyinstaller
+        pip install -r requirements.txt
 
     - name: Build the Flask Project
       run: |
         mkdir dist
-        pyinstaller -D alys.py --add-data "./static:./static" --add-data "./templates:./templates" --distpath dist
+        pyinstaller -D run.py --add-data "./app:./app" --distpath dist -n alys
 
     - name: Package the Flask Project
       run: |
-        mv dist/alys dist/alys_v0.0.${{ github.run_number }}_linux_amd64
+        mv dist/alys dist/alys_${{ steps.extract_tag.outputs.tag_name }}_linux_amd64
         cd dist
-        tar -czf alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz *
-        mv alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz ~/alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz
+        tar -czf alys_${{ steps.extract_tag.outputs.tag_name }}_linux_amd64.tar.gz *
+        mv alys_${{ steps.extract_tag.outputs.tag_name }}_linux_amd64.tar.gz ~/alys_${{ steps.extract_tag.outputs.tag_name }}_linux_amd64.tar.gz
 
     - name: Upload build result
       uses: actions/upload-artifact@v3
       with:
         name: build-result
-        path: ~/alys_v0.0.${{ github.run_number }}_linux_amd64.tar.gz
+        path: ~/alys_${{ steps.extract_tag.outputs.tag_name }}_linux_amd64.tar.gz
 
   linux_arm64:
     name: Build for arm64
-
-    strategy:                     
-      matrix:
-        os: [ ubuntu-latest ]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
 
     steps:
+    - name: Extract Tag Name
+      id: extract_tag
+      run: echo "::set-output name=tag_name::${GITHUB_REF#refs/tags/}"
+
     - name: Checkout code
       uses: actions/checkout@v2
 
@@ -66,14 +66,14 @@ jobs:
         commands: |
           apt update
           apt install python3 pip -y --fix-missing
-          pip install aligo flask apscheduler flask_sqlalchemy pyinstaller
+          pip install -r requirements.txt
           mkdir dist
           mkdir binary
-          pyinstaller -D alys.py --add-data "./static:./static" --add-data "./templates:./templates" --distpath dist
-          mv dist/alys dist/alys_v0.0.${{ github.run_number }}_linux_arm64
+          pyinstaller -D run.py --add-data "./app:./app" --distpath dist -n alys
+          mv dist/alys dist/alys_${{ steps.extract_tag.outputs.tag_name }}_linux_arm64
           cd dist
-          tar -czf alys_v0.0.${{ github.run_number }}_linux_arm64.tar.gz *
-          mv alys_v0.0.${{ github.run_number }}_linux_arm64.tar.gz ../binary/alys_v0.0.${{ github.run_number }}_linux_arm64.tar.gz
+          tar -czf alys_${{ steps.extract_tag.outputs.tag_name }}_linux_arm64.tar.gz *
+          mv alys_${{ steps.extract_tag.outputs.tag_name }}_linux_arm64.tar.gz ../binary/alys_${{ steps.extract_tag.outputs.tag_name }}_linux_arm64.tar.gz
 
     - name: Upload build result
       uses: actions/upload-artifact@v3
@@ -83,13 +83,16 @@ jobs:
 
   windows_x64:
     name: Build for win_X64
-
-    strategy:
-      matrix:
-        os: [ windows-latest ]
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
 
     steps:
+    - name: Extract Tag Name
+      id: extract_tag
+      run: echo "::set-output name=tag_name::${GITHUB_REF#refs/tags/}"
+  
     - name: Checkout code
       uses: actions/checkout@v2
 
@@ -100,26 +103,26 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install aligo flask apscheduler flask_sqlalchemy pyinstaller
+        pip install -r requirements.txt
 
     - name: Build the Flask Project
       run: |
         mkdir dist
-        pyinstaller -D alys.py --add-data "./static;./static" --add-data "./templates;./templates" --distpath dist
+        pyinstaller -D run.py --add-data "./app;./app" --distpath dist -n alys
 
     - name: Package the Flask Project
       run: |
-        mv dist/alys dist/alys_v0.0.${{ github.run_number }}_windows_x64
+        mv dist/alys dist/alys_${{ steps.extract_tag.outputs.tag_name }}_windows_x64
         cd dist
-        Compress-Archive -Path * -CompressionLevel Optimal -DestinationPath alys_v0.0.${{ github.run_number }}_windows_x64.zip
+        tar -czf alys_${{ steps.extract_tag.outputs.tag_name }}_windows_x64.tar.gz *
         mkdir binary
-        mv alys_v0.0.${{ github.run_number }}_windows_x64.zip ~/alys_v0.0.${{ github.run_number }}_windows_x64.zip
+        mv alys_${{ steps.extract_tag.outputs.tag_name }}_windows_x64.tar.gz ~/alys_${{ steps.extract_tag.outputs.tag_name }}_windows_x64.tar.gz
 
     - name: Upload build result
       uses: actions/upload-artifact@v3
       with:
         name: build-result
-        path: ~/alys_v0.0.${{ github.run_number }}_windows_x64.zip
+        path: ~/alys_${{ steps.extract_tag.outputs.tag_name }}_windows_x64.tar.gz
 
   release:
     name: Creat release
@@ -127,6 +130,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Extract Tag Name
+        id: extract_tag
+        run: echo "::set-output name=tag_name::${GITHUB_REF#refs/tags/}"
+  
+      - name: Use Tag Name
+        run: |
+          echo "Tag name: ${{ steps.extract_tag.outputs.tag_name }}"
+
       - name: Download back the built software
         uses: actions/download-artifact@v3
         with:
@@ -137,4 +148,4 @@ jobs:
         with:
           artifacts: "*"
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag: v0.0.${{ github.run_number }}
+          tag: ${{ steps.extract_tag.outputs.tag_name }}
