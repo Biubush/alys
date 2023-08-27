@@ -290,7 +290,11 @@ def startup():  # 初始化程序
                     addSchedule(task.name, task.owner)
                     enable_count += 1
                 if task.running == 1:
-                    mainJob(task.owner, task.name)
+                    data={
+                        'owner':task.owner,
+                        'taskname':task.name
+                    }
+                    startThread(mainJob,data)
             writeAdminDialog("全部任务启用完成，共启动" + str(enable_count) + "个任务")
             STARTUP = True
 
@@ -457,6 +461,10 @@ def mainJob(owner: str, taskname: str):  # 主程序，运行任务
                     + "】在本次运行中遇到问题，任务内部出错，可能原因:\n1.分享被禁；\n2.分享取消；\n3.检测更新的频率过快；\n4.程序内部出bug\n您可前往网站测试并排查错误",
                 )
                 flag2 = False
+                Task.query.filter_by(
+                    name=taskname, owner=owner
+                ).first().running = False
+                db.session.commit()
                 break
         if (
             not Task.query.filter_by(name=taskname, owner=owner).first().switch
@@ -472,6 +480,10 @@ def mainJob(owner: str, taskname: str):  # 主程序，运行任务
                 "【" + taskname + "】更新出错",
                 wholeText="您部署于ALYS上的任务【" + taskname + "】在本次运行中遇到问题，运行过程中失败:任务被禁用。",
             )
+            Task.query.filter_by(
+                name=taskname, owner=owner
+            ).first().running = False
+            db.session.commit()
 
 
 def addSchedule(taskname: str, owner: str):  # 增加一个计划日程
@@ -617,7 +629,7 @@ ALIGOS = {}  # 用于存放各个用户的阿里云盘实例
 WEBSITE = None  # 个人ALYS项目域名
 USER = None  # 临时用户记录，用于登录阿里云盘
 STARTUP = False  # 标志初始化结束
-VERSION = "V1.0.4"  # 当前版本号
+VERSION = "V1.0.5"  # 当前版本号
 # ---------------------------------------路由--------------------------------------
 
 
