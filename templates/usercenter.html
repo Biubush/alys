@@ -181,6 +181,7 @@
             </div>
         </div>
     </div>
+    
     <div class="offcanvas offcanvas-start" tabindex="-1" id="editoffcan" aria-labelledby="editLabel">
         <div class="offcanvas-header">
             <h5 class="offcanvas-title" id="editLabel">编辑任务</h5>
@@ -196,8 +197,9 @@
     <div class="row col-lg-8 offset-lg-2">
         <form action="/usercenter" method="get">
             <div class="input-group mb-3">
-                <button type="button" class="btn btn-outline-dark" data-bs-toggle="modal"
-                    data-bs-target="#addtaskModal" title="添加任务"><i class="bi bi-clipboard-plus"></i></button>
+                <button type="button" class="btn btn-outline-dark" title="搜索资源" onclick="window.open('https://www.wogg.link', '_blank');"><i class="bi bi-search-heart"></i></button>
+                <button type="button" class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#addtaskModal"
+                    title="添加任务"><i class="bi bi-clipboard-plus"></i></button>
                 <input type="text" class="form-control" placeholder="搜索任务" aria-label="搜索任务"
                     aria-describedby="basic-addon1" name="search">
                 <button type="submit" class="btn btn-outline-dark" data-bs-toggle="tooltip" data-bs-placement="top"
@@ -410,13 +412,13 @@
             })
         }
     }
-    function offline(username){
-        if (confirm("是否确认下线阿里云盘？这将导致ALYS订阅功能不可用" )) {
+    function offline(username) {
+        if (confirm("是否确认下线阿里云盘？这将导致ALYS订阅功能不可用")) {
             $.ajax({
                 type: "post",
                 url: '/kickoff',
                 data: {
-                    username:username
+                    username: username
                 },
                 success: function (res) {
                     alert(res);
@@ -428,7 +430,7 @@
             })
         }
     }
-    function subadd(){
+    function subadd() {
         $("#subbtn").attr("disabled", true)
         $("#subbtn").html("<span class='spinner-border spinner-border-sm' role='status' aria-hidden='true'></span>稍候")
         event.preventDefault();
@@ -436,7 +438,7 @@
             let formData = $("#addform").serialize();
             $.post('/addtask', formData, function (response) {
                 alert(response);
-                if (response!='非法更新频率:更新频率小于600！'){
+                if (response != '非法更新频率:更新频率小于600！') {
                     location.reload();
                 }
                 $("#subbtn").removeAttr("disabled");

@@ -35,7 +35,9 @@ def nowTime() -> str:  # 获取当前时间，返回字符串(年-月-日_时-�
     return time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime(time.time()))
 
 
-def startThread(target, kwargs: dict = None) -> threading:  # 启动线程,输入函数名和注入的参数，返回生成的线程对象
+def startThread(
+    target, kwargs: dict = None
+) -> threading:  # 启动线程,输入函数名和注入的参数，返回生成的线程对象
     thread = threading.Thread(target=target, kwargs=kwargs)
     thread.start()
     return thread
@@ -46,7 +48,9 @@ def startFlask():  # 按配置启动flask
     app.run("0.0.0.0", PORT)
 
 
-def startAligo(owner: str, email: str = None) -> Aligo:  # 输入用户名和邮件(可空)，登录阿里云并返回生成的阿里云对象
+def startAligo(
+    owner: str, email: str = None
+) -> Aligo:  # 输入用户名和邮件(可空)，登录阿里云并返回生成的阿里云对象
     globals
     if not email:
         try:
@@ -61,11 +65,16 @@ def startAligo(owner: str, email: str = None) -> Aligo:  # 输入用户名和邮
                 writeAdminDialog(f"用户{owner}扫码超时")
     else:
         ALIGOS[owner] = Aligo(
-            name=owner, email=(email, "请重新登陆"), level=logging.INFO, login_timeout=60
+            name=owner,
+            email=(email, "请重新登陆"),
+            level=logging.INFO,
+            login_timeout=60,
         )
 
 
-def writeDialog(owner: str, content: str):  # 输入用户名和日志内容，对指定用户进行日志的增操作
+def writeDialog(
+    owner: str, content: str
+):  # 输入用户名和日志内容，对指定用户进行日志的增操作
     dialog = ""
     dialog = User.query.filter(User.username == owner).first().dialog
     if countLines(dialog) >= 100:
@@ -280,9 +289,15 @@ def startup():  # 初始化程序
                         aligo_count += 1
                 else:
                     ban_count += 1
-                writeDialog(user.username, "alys后台已重启或更新，为您造成的不便敬请谅解")
+                writeDialog(
+                    user.username, "alys后台已重启或更新，为您造成的不便敬请谅解"
+                )
             writeAdminDialog(
-                "登录了" + str(aligo_count) + "个用户的阿里云盘,有" + str(ban_count) + "个用户被禁而未登录"
+                "登录了"
+                + str(aligo_count)
+                + "个用户的阿里云盘,有"
+                + str(ban_count)
+                + "个用户被禁而未登录"
             )
             enable_count = 0
             for task in Task.query.all():
@@ -290,11 +305,8 @@ def startup():  # 初始化程序
                     addSchedule(task.name, task.owner)
                     enable_count += 1
                 if task.running == 1:
-                    data={
-                        'owner':task.owner,
-                        'taskname':task.name
-                    }
-                    startThread(mainJob,data)
+                    data = {"owner": task.owner, "taskname": task.name}
+                    startThread(mainJob, data)
             writeAdminDialog("全部任务启用完成，共启动" + str(enable_count) + "个任务")
             STARTUP = True
 
@@ -415,7 +427,8 @@ def mainJob(owner: str, taskname: str):  # 主程序，运行任务
                 ):
                     if not flag:
                         writeDialog(
-                            owner=owner, content="任务【" + taskname + "】进入循环等待..."
+                            owner=owner,
+                            content="任务【" + taskname + "】进入循环等待...",
                         )
                         flag = True
                         Task.query.filter_by(
@@ -424,7 +437,9 @@ def mainJob(owner: str, taskname: str):  # 主程序，运行任务
                         db.session.commit()
                     time.sleep(task.interval)
                 else:
-                    writeDialog(owner=owner, content="任务【" + taskname + "】已完成本次更新")
+                    writeDialog(
+                        owner=owner, content="任务【" + taskname + "】已完成本次更新"
+                    )
                     sendHtml(
                         user.mail,
                         user.nickname,
@@ -435,9 +450,9 @@ def mainJob(owner: str, taskname: str):  # 主程序，运行任务
                         + task.folder_name
                         + "}中，请注意查收！\n感谢您对ALYS的支持与信赖，我们将持续提供稳定便捷的服务!",
                     )
-                    Task.query.filter_by(
-                        name=taskname, owner=owner
-                    ).first().running = False
+                    Task.query.filter_by(name=taskname, owner=owner).first().running = (
+                        False
+                    )
                     db.session.commit()
                     break
             except:
@@ -461,9 +476,7 @@ def mainJob(owner: str, taskname: str):  # 主程序，运行任务
                     + "】在本次运行中遇到问题，任务内部出错，可能原因:\n1.分享被禁；\n2.分享取消；\n3.检测更新的频率过快；\n4.程序内部出bug\n您可前往网站测试并排查错误",
                 )
                 flag2 = False
-                Task.query.filter_by(
-                    name=taskname, owner=owner
-                ).first().running = False
+                Task.query.filter_by(name=taskname, owner=owner).first().running = False
                 db.session.commit()
                 break
         if (
@@ -471,7 +484,10 @@ def mainJob(owner: str, taskname: str):  # 主程序，运行任务
             and flag2
         ):
             user = User.query.filter(User.username == owner).first()
-            writeDialog(owner=owner, content="任务【" + taskname + "】运行过程中失败:任务被禁用.")
+            writeDialog(
+                owner=owner,
+                content="任务【" + taskname + "】运行过程中失败:任务被禁用.",
+            )
             if scheduler.get_job(job_id=taskname + "_" + owner):
                 scheduler.pause_job(job_id=taskname + "_" + owner)
                 scheduler.remove_job(job_id=taskname + "_" + owner)
@@ -479,11 +495,11 @@ def mainJob(owner: str, taskname: str):  # 主程序，运行任务
                 user.mail,
                 user.nickname,
                 "【" + taskname + "】更新出错",
-                wholeText="您部署于ALYS上的任务【" + taskname + "】在本次运行中遇到问题，运行过程中失败:任务被禁用。",
+                wholeText="您部署于ALYS上的任务【"
+                + taskname
+                + "】在本次运行中遇到问题，运行过程中失败:任务被禁用。",
             )
-            Task.query.filter_by(
-                name=taskname, owner=owner
-            ).first().running = False
+            Task.query.filter_by(name=taskname, owner=owner).first().running = False
             db.session.commit()
 
 
@@ -597,7 +613,9 @@ class Task(db.Model):
     name = db.Column(db.String(30))  # 任务名称
     switch = db.Column(db.Boolean, default=False)  # 是否启用
     type = db.Column(db.Integer)  # 任务类型，0为周任务，1为日任务，2为月任务
-    plan = db.Column(db.String(10))  # 任务计划，周任务填周几(1~7)，日任务不必填，月任务填几号(1~31)
+    plan = db.Column(
+        db.String(10)
+    )  # 任务计划，周任务填周几(1~7)，日任务不必填，月任务填几号(1~31)
     hour = db.Column(db.Integer)  # 几点
     minute = db.Column(db.Integer)  # 几分
     second = db.Column(db.Integer)  # 几秒
@@ -630,7 +648,7 @@ ALIGOS = {}  # 用于存放各个用户的阿里云盘实例
 WEBSITE = None  # 个人ALYS项目域名
 USER = None  # 临时用户记录，用于登录阿里云盘
 STARTUP = False  # 标志初始化结束
-VERSION = "V1.0.6"  # 当前版本号
+VERSION = "V1.0.7"  # 当前版本号
 # ---------------------------------------路由--------------------------------------
 
 
@@ -721,7 +739,10 @@ def usercenter():
                     dialog=dialog,
                 )
             else:
-                flash("账号被封禁，请联系管理员，邮箱地址:" + Admin.query.first().mail_receiver)
+                flash(
+                    "账号被封禁，请联系管理员，邮箱地址:"
+                    + Admin.query.first().mail_receiver
+                )
                 session.pop("username", None)
                 return redirect(url_for("welcome"))
 
@@ -925,6 +946,11 @@ def signup():
         ):
             flash("用户名以及昵称都不可为纯数字")
             return redirect(url_for("welcome"))
+        # 如果用户名与管理员用户名冲突
+        if request.form.get("username") == Admin.query.first().username:
+            flash("非法用户名")
+            return redirect(url_for("welcome"))
+
         if not User.query.filter_by(username=request.form.get("username")).first():
             if not User.query.filter_by(mail=request.form.get("email")).first():
                 if request.form.get("password") == request.form.get("vpassword"):
@@ -964,7 +990,9 @@ def fetch():
                 "寻回账号",
                 f"您的账户信息为：\n用户名:{user.username}\n密码:{user.password}\n请务必保存好您的账号密码，必要的话请登录后立刻修改您的密码",
             )
-            flash("验证成功，账号及密码已发放至您的邮箱，请妥善保存密码，如有必要请及时修改")
+            flash(
+                "验证成功，账号及密码已发放至您的邮箱，请妥善保存密码，如有必要请及时修改"
+            )
             session.pop("v-code", None)
         else:
             flash("找回账号出错：该邮箱未绑定账号")
@@ -1171,7 +1199,9 @@ def addtask():
     elif Task.query.filter_by(
         name=request.form.get("name"), owner=g.user.username
     ).first():
-        writeDialog(g.user.username, "添加任务【" + request.form.get("name") + "】失败:名称冲突")
+        writeDialog(
+            g.user.username, "添加任务【" + request.form.get("name") + "】失败:名称冲突"
+        )
         return "同名任务已存在，请更改名称以避免冲突"
     elif int(request.form.get("interval")) < 600:
         return "非法更新频率:更新频率小于600！"
@@ -1243,13 +1273,19 @@ def addtask():
                     writeDialog(g.user.username, "添加任务【" + name + "】成功")
                     return "任务添加成功"
                 else:
-                    writeDialog(g.user.username, "添加任务【" + name + "】任务失败:任务已存在")
+                    writeDialog(
+                        g.user.username, "添加任务【" + name + "】任务失败:任务已存在"
+                    )
                     return "添加任务失败:任务已存在"
             except:
-                writeDialog(g.user.username, "添加任务【" + name + "】任务失败:内部出错")
+                writeDialog(
+                    g.user.username, "添加任务【" + name + "】任务失败:内部出错"
+                )
                 return "添加任务失败:内部出错"
         else:
-            writeDialog(g.user.username, "添加任务【" + name + "】任务失败:链接不合法！")
+            writeDialog(
+                g.user.username, "添加任务【" + name + "】任务失败:链接不合法！"
+            )
             return "添加任务失败:链接不合法！"
 
 
@@ -1302,10 +1338,14 @@ def login():
                     writeAdminDialog("上线用户[" + user.nickname + "]阿里云盘成功")
                     return "上线成功"
                 else:
-                    writeAdminDialog("上线用户[" + user.nickname + "]阿里云盘失败:已过期或被封禁")
+                    writeAdminDialog(
+                        "上线用户[" + user.nickname + "]阿里云盘失败:已过期或被封禁"
+                    )
                     return "上线失败:已过期或被封禁"
             else:
-                writeAdminDialog("上线用户[" + user.nickname + "]阿里云盘失败:用户当前在线")
+                writeAdminDialog(
+                    "上线用户[" + user.nickname + "]阿里云盘失败:用户当前在线"
+                )
                 return "用户阿里云盘当前在线"
         elif username == g.user.username:
             if not ALIGOS.get(user.username):
@@ -1313,7 +1353,9 @@ def login():
                     writeDialog(owner=username, content="上线阿里云盘成功")
                     return "上线成功"
                 else:
-                    writeDialog(owner=username, content="上线阿里云盘失败:已过期或被封禁")
+                    writeDialog(
+                        owner=username, content="上线阿里云盘失败:已过期或被封禁"
+                    )
                     return "上线失败:已过期或被封禁"
             else:
                 writeDialog(username, "上线阿里云盘失败:当前已在线")
@@ -1354,7 +1396,9 @@ def kickoff():
                 writeAdminDialog("下线用户[" + user.nickname + "]阿里云盘成功")
                 return "下线成功"
             else:
-                writeAdminDialog("下线用户[" + user.nickname + "]阿里云盘失败:用户当前离线")
+                writeAdminDialog(
+                    "下线用户[" + user.nickname + "]阿里云盘失败:用户当前离线"
+                )
                 return "用户阿里云盘当前离线"
         elif username == g.user.username:  # 用户匹配
             if ALIGOS.get(username):
@@ -1408,10 +1452,14 @@ def createfolder():
             ALIGOS[g.user.username].create_folder(
                 name=foldername, parent_file_id=parent_id
             )
-            writeDialog(owner=g.user.username, content="创建了【" + foldername + "】文件夹")
+            writeDialog(
+                owner=g.user.username, content="创建了【" + foldername + "】文件夹"
+            )
             return jsonify({"notice": "创建成功"})
         except:
-            writeDialog(owner=g.user.username, content="创建【" + foldername + "】文件夹失败")
+            writeDialog(
+                owner=g.user.username, content="创建【" + foldername + "】文件夹失败"
+            )
             return jsonify({"notice": "创建失败"})
 
 
@@ -1438,10 +1486,13 @@ def applytest():
                 key=request.form.get("key"),
             )
             if savecount == 0:
-                writeDialog(owner=g.user.username, content="经过本次测试，无需要更新的文件")
+                writeDialog(
+                    owner=g.user.username, content="经过本次测试，无需要更新的文件"
+                )
             else:
                 writeDialog(
-                    owner=g.user.username, content="经过本次测试，更新了" + str(savecount) + "个文件"
+                    owner=g.user.username,
+                    content="经过本次测试，更新了" + str(savecount) + "个文件",
                 )
             return "测试成功,请查看日志获取详情"
         except:
