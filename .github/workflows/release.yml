@@ -30,7 +30,7 @@ jobs:
     - name: Build the Flask Project
       run: |
         mkdir dist
-        pyinstaller -D app.py --add-data "./static:./static" --add-data "./templates:./templates" --distpath dist -n alys
+        pyinstaller -D app.py --add-data "./static:./static" --add-data "./templates:./templates" --static --distpath dist -n alys
 
     - name: Package the Flask Project
       run: |
@@ -69,7 +69,7 @@ jobs:
           pip install -r requirements.txt --break-system-packages
           mkdir dist
           mkdir binary
-          pyinstaller -D app.py --add-data "./static:./static" --add-data "./templates:./templates" --distpath dist -n alys
+          pyinstaller -D app.py --add-data "./static:./static" --add-data "./templates:./templates" --static --distpath dist -n alys
           mv dist/alys dist/alys_${{ steps.extract_tag.outputs.tag_name }}_linux_arm64
           cd dist
           tar -czf alys_${{ steps.extract_tag.outputs.tag_name }}_linux_arm64.tar.gz *
@@ -108,7 +108,7 @@ jobs:
     - name: Build the Flask Project
       run: |
         mkdir dist
-        pyinstaller -D app.py --add-data "./static;./static" --add-data "./templates;./templates" --distpath dist -n alys
+        pyinstaller -D app.py --add-data "./static;./static" --add-data "./templates;./templates" --static --distpath dist -n alys
 
     - name: Package the Flask Project
       run: |
