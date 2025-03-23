@@ -1,0 +1,90 @@
+version: '3'
+
+services:
+  db:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=aliyundrive
+      - POSTGRES_PASSWORD=your_secure_password
+      - POSTGRES_DB=aliyundrive_sync
+    ports:
+      - "5432:5432"
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aliyundrive"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:6
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./config.ini:/app/config.ini:ro
+    ports:
+      - "80:80"
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+
+  # 可选: Celery Worker，用于处理后台任务
+  celery-worker:
+    build: 
+      context: .
+      dockerfile: backend/Dockerfile.celery
+    volumes:
+      - ./config.ini:/app/config.ini:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+    environment:
+      - CONFIG_FILE=/app/config.ini
+      - TZ=Asia/Shanghai
+    command: celery -A app.tasks.worker worker --loglevel=info
+
+  # 可选: Celery Beat，用于调度定时任务
+  celery-beat:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.celery
+    volumes:
+      - ./config.ini:/app/config.ini:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+    environment:
+      - CONFIG_FILE=/app/config.ini
+      - TZ=Asia/Shanghai
+    command: celery -A app.tasks.worker beat --loglevel=info
+
+volumes:
+  postgres_data:
+  redis_data: 
