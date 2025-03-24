@@ -4,7 +4,7 @@ WORKDIR /app
 
 # 安装依赖
 COPY package.json package-lock.json* ./
-RUN npm ci --quiet
+RUN npm install --quiet
 
 # 复制源代码
 COPY . .
