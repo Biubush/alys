@@ -11,7 +11,7 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   BellOutlined,
-  ShieldOutlined,
+  SafetyOutlined,
 } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
@@ -130,7 +130,7 @@ const AdminLayout: React.FC = () => {
           justifyContent: collapsed ? 'center' : 'flex-start',
           color: 'white',
         }}>
-          <ShieldOutlined style={{ fontSize: '20px', marginRight: collapsed ? '0' : '8px' }} />
+          <SafetyOutlined style={{ fontSize: '20px', marginRight: collapsed ? '0' : '8px' }} />
           {!collapsed && <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold' }}>管理员控制台</h1>}
         </div>
         <Menu
