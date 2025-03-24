@@ -32,6 +32,10 @@ class Settings(BaseModel):
     ALIYUNDRIVE_REFRESH_TOKEN: str = os.getenv("ALIYUNDRIVE_REFRESH_TOKEN", "")
     SYNC_INTERVAL_MINUTES: int = int(os.getenv("SYNC_INTERVAL_MINUTES", "30"))
     
+    # Celery配置
+    CELERY_BROKER_URL: str = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
+    CELERY_RESULT_BACKEND: str = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
+    
     class Config:
         case_sensitive = True
 

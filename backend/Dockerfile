@@ -23,7 +23,15 @@ EXPOSE 8000
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
-    CMD curl -f http://localhost:8000/api/v1/health || exit 1
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# 创建启动脚本
+RUN echo '#!/bin/bash\n\
+echo "正在初始化数据库..."\n\
+python -m app.database_init\n\
+echo "启动应用服务..."\n\
+uvicorn app.main:app --host 0.0.0.0 --port 8000\n\
+' > /app/start.sh && chmod +x /app/start.sh
 
 # 启动命令
-CMD ["sh", "-c", "python -m app.database_init && uvicorn app.main:app --host 0.0.0.0 --port 8000"] 
+CMD ["/app/start.sh"] 

@@ -8,7 +8,7 @@ from flask_caching import Cache
 from celery import Celery
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from config.config import config
+from app.core.config import settings
 
 # 初始化扩展但不绑定到应用
 db = SQLAlchemy()
@@ -17,7 +17,7 @@ jwt = JWTManager()
 mail = Mail()
 cache = Cache()
 cors = CORS()
-celery = Celery(__name__, broker=config['default'].CELERY_BROKER_URL)
+celery = Celery(__name__, broker=settings.CELERY_BROKER_URL if hasattr(settings, 'CELERY_BROKER_URL') else 'redis://localhost:6379/0')
 
 # 初始化调度器
 scheduler = BackgroundScheduler(
@@ -31,8 +31,7 @@ scheduler = BackgroundScheduler(
 def create_app(config_name='default'):
     """应用工厂函数"""
     app = Flask(__name__)
-    app.config.from_object(config[config_name])
-    config[config_name].init_app(app)
+    app.config.from_object(settings)
     
     # 初始化扩展
     db.init_app(app)
