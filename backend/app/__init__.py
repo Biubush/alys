@@ -46,7 +46,7 @@ def create_app(config_name='default'):
     
     # 注册蓝图
     from .api import api_bp
-    app.register_blueprint(api_bp, url_prefix='/api')
+    app.register_blueprint(api_bp, url_prefix='/v1')
     
     # 启动调度器
     if not scheduler.running:
