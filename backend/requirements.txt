@@ -29,7 +29,7 @@ qrcode
 pathlib
 
 # 日志和工具
-logging
+# 删除logging，它是Python标准库的一部分
 
 # 其他工具
 python-dotenv 
