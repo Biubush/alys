@@ -33,6 +33,11 @@ def create_app(config_name='default'):
     app = Flask(__name__)
     app.config.from_object(settings)
     
+    # 添加SQLAlchemy配置
+    app.config['SQLALCHEMY_DATABASE_URI'] = settings.DATABASE_URL
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['SECRET_KEY'] = settings.SECRET_KEY
+    
     # 初始化扩展
     db.init_app(app)
     migrate.init_app(app, db)

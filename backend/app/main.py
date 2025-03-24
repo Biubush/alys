@@ -1,22 +1,14 @@
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.openapi.docs import get_swagger_ui_html
-from fastapi.middleware.wsgi import WSGIMiddleware
 
-from app import create_app
 from app.core.config import settings
 
-# 创建Flask应用
-flask_app = create_app()
-
+# 创建FastAPI应用
 app = FastAPI(
     title="阿里云盘同步系统",
     description="阿里云盘同步系统API",
     version="1.0.0",
-    docs_url=None,
-    redoc_url=None,
-    openapi_url="/api/openapi.json",
 )
 
 # CORS设置
@@ -28,22 +20,68 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 单独处理健康检查路由 (放在WSGI挂载前)
+# 健康检查路由
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
 
-# 将Flask应用挂载到API路径
-app.mount("/api", WSGIMiddleware(flask_app))
+# API状态
+@app.get("/api/status")
+def api_status():
+    return {
+        "success": True,
+        "status": "running",
+        "message": "服务正在运行中"
+    }
 
-# 自定义文档路由
-@app.get("/docs", include_in_schema=False)
-async def custom_swagger_ui_html():
-    return get_swagger_ui_html(
-        openapi_url="/api/openapi.json",
-        title="阿里云盘同步系统 API",
-        swagger_js_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@3/swagger-ui-bundle.js",
-        swagger_css_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@3/swagger-ui.css",
+# 登录接口
+@app.post("/api/auth/login")
+async def login(request: Request):
+    try:
+        data = await request.json()
+        username = data.get("username", "")
+        password = data.get("password", "")
+        
+        # 简化的登录处理
+        if username == settings.ADMIN_USERNAME and password == settings.ADMIN_PASSWORD:
+            return {
+                "success": True,
+                "data": {
+                    "token": "temporary_token",
+                    "user": {
+                        "id": 1,
+                        "username": username,
+                        "is_admin": True
+                    }
+                }
+            }
+        else:
+            return JSONResponse(
+                status_code=401,
+                content={
+                    "success": False,
+                    "message": "用户名或密码错误"
+                }
+            )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "message": f"服务器错误: {str(e)}"
+            }
+        )
+
+# 添加一个临时路由来处理其他所有请求
+@app.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+async def catch_all_api(request: Request, path: str):
+    return JSONResponse(
+        status_code=501,
+        content={
+            "success": False,
+            "message": "API功能正在开发中",
+            "path": path
+        }
     )
 
 if __name__ == "__main__":

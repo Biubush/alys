@@ -23,35 +23,27 @@ EXPOSE 8000
 
 # 创建启动脚本
 RUN echo '#!/bin/bash\n\
-# 创建一个简单的健康检查服务器以并行运行\n\
-python -c "\n\
-from http.server import HTTPServer, BaseHTTPRequestHandler\n\
-import json, threading\n\
+set -e\n\
 \n\
-class HealthHandler(BaseHTTPRequestHandler):\n\
-    def do_GET(self):\n\
-        if self.path == \"/health\":\n\
-            self.send_response(200)\n\
-            self.send_header(\"Content-type\", \"application/json\")\n\
-            self.end_headers()\n\
-            self.wfile.write(json.dumps({\"status\": \"ok\"}).encode())\n\
-        else:\n\
-            self.send_response(404)\n\
-            self.end_headers()\n\
+# 启动适配器应用来提供健康检查\n\
+echo "启动健康检查服务..."\n\
+uvicorn app.adapter:app --host 0.0.0.0 --port 8001 & \n\
+ADAPTER_PID=$!\n\
 \n\
-def run_health_server():\n\
-    print(\"启动健康检查服务在端口8001...\")\n\
-    server = HTTPServer((\"0.0.0.0\", 8001), HealthHandler)\n\
-    server.serve_forever()\n\
+# 等待健康检查服务启动\n\
+sleep 2\n\
+curl -s http://localhost:8001/health > /dev/null || { echo "健康检查服务启动失败"; exit 1; }\n\
+echo "健康检查服务启动成功，PID: $ADAPTER_PID"\n\
 \n\
-thread = threading.Thread(target=run_health_server, daemon=True)\n\
-thread.start()\n\
-" &\n\
-\n\
+# 初始化应用\n\
 echo "正在初始化数据库..."\n\
 python -m app.database_init || echo "数据库初始化失败，继续启动应用"\n\
 \n\
-echo "启动应用服务..."\n\
+# 确保在应用退出时关闭健康检查服务\n\
+trap "kill $ADAPTER_PID 2>/dev/null || true" EXIT\n\
+\n\
+# 启动主应用\n\
+echo "启动主应用服务..."\n\
 uvicorn app.main:app --host 0.0.0.0 --port 8000\n\
 ' > /app/start.sh && chmod +x /app/start.sh
 
