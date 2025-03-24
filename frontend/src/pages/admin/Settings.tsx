@@ -1,238 +1,288 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
+  Typography, 
   Form, 
   Input, 
   Button, 
   Switch, 
   Select, 
   InputNumber, 
-  Tabs, 
   Space, 
-  Typography, 
-  Divider,
-  message,
+  Divider, 
+  Tabs,
   Alert,
-  Spin,
+  message,
   Upload,
-  Tooltip,
-  Row,
-  Col
+  Radio
 } from 'antd';
-import { 
-  SaveOutlined, 
-  QuestionCircleOutlined, 
+import {
+  SaveOutlined,
   UploadOutlined,
+  ReloadOutlined,
   SyncOutlined,
+  CloudServerOutlined,
+  MailOutlined,
+  SafetyCertificateOutlined,
   SettingOutlined,
-  UserOutlined,
-  SecurityScanOutlined,
-  ClockCircleOutlined,
-  FileOutlined,
   DatabaseOutlined
 } from '@ant-design/icons';
-import type { TabsProps } from 'antd';
+import type { RcFile, UploadFile, UploadProps } from 'antd/es/upload/interface';
 
 const { Title, Text, Paragraph } = Typography;
+const { TabPane } = Tabs;
 const { Option } = Select;
 const { TextArea } = Input;
-const { TabPane } = Tabs;
 
 interface SystemSettings {
-  general: {
-    siteName: string;
-    siteDescription: string;
-    adminEmail: string;
-    allowRegistration: boolean;
-    defaultUserQuota: number;
-    maxTasksPerUser: number;
-    logo: string;
-  };
-  sync: {
-    maxConcurrentTasks: number;
-    defaultSyncInterval: number;
-    timeoutSeconds: number;
-    retryCount: number;
-    retryDelaySeconds: number;
-    logLevel: 'debug' | 'info' | 'warning' | 'error';
-  };
-  storage: {
-    storagePath: string;
-    tempPath: string;
-    maxFileSize: number;
-    allowedFileTypes: string[];
-    cleanTempFilesOlderThan: number;
-  };
-  security: {
-    sessionTimeoutMinutes: number;
-    maxLoginAttempts: number;
-    lockDurationMinutes: number;
-    passwordMinLength: number;
-    passwordRequireNumbers: boolean;
-    passwordRequireSpecialChars: boolean;
-    enableTwoFactor: boolean;
-  };
+  app_name: string;
+  app_url: string;
+  app_logo?: string;
+  admin_email: string;
+  enable_registration: boolean;
+  max_users: number;
+  default_user_quota: number;
+  file_size_limit: number;
+  storage_path: string;
+  enable_auto_sync: boolean;
+  auto_sync_interval: number;
+  aliyun_url: string;
+}
+
+interface EmailSettings {
+  smtp_server: string;
+  smtp_port: number;
+  smtp_username: string;
+  smtp_password: string;
+  smtp_encryption: 'none' | 'tls' | 'ssl';
+  from_email: string;
+  from_name: string;
+  enable_email_notifications: boolean;
+}
+
+interface BackupSettings {
+  enable_auto_backup: boolean;
+  backup_interval: number;
+  backup_retention: number;
+  backup_path: string;
+  include_user_files: boolean;
 }
 
 // 模拟系统设置数据
-const mockSettings: SystemSettings = {
-  general: {
-    siteName: '阿里云盘同步系统',
-    siteDescription: '便捷高效的阿里云盘文件同步管理系统',
-    adminEmail: 'admin@example.com',
-    allowRegistration: true,
-    defaultUserQuota: 5,
-    maxTasksPerUser: 10,
-    logo: ''
-  },
-  sync: {
-    maxConcurrentTasks: 5,
-    defaultSyncInterval: 24,
-    timeoutSeconds: 300,
-    retryCount: 3,
-    retryDelaySeconds: 60,
-    logLevel: 'info'
-  },
-  storage: {
-    storagePath: '/data/storage',
-    tempPath: '/data/temp',
-    maxFileSize: 1024, // MB
-    allowedFileTypes: ['*'],
-    cleanTempFilesOlderThan: 24 // hours
-  },
-  security: {
-    sessionTimeoutMinutes: 30,
-    maxLoginAttempts: 5,
-    lockDurationMinutes: 30,
-    passwordMinLength: 8,
-    passwordRequireNumbers: true,
-    passwordRequireSpecialChars: false,
-    enableTwoFactor: false
-  }
+const mockSystemSettings: SystemSettings = {
+  app_name: '阿里云盘同步工具',
+  app_url: 'http://localhost:8000',
+  admin_email: 'admin@example.com',
+  enable_registration: true,
+  max_users: 100,
+  default_user_quota: 1024 * 1024 * 1024 * 5, // 5GB
+  file_size_limit: 1024 * 1024 * 200, // 200MB
+  storage_path: '/data/storage',
+  enable_auto_sync: true,
+  auto_sync_interval: 60, // 60分钟
+  aliyun_url: 'https://www.aliyundrive.com/'
+};
+
+// 模拟邮件设置数据
+const mockEmailSettings: EmailSettings = {
+  smtp_server: 'smtp.example.com',
+  smtp_port: 587,
+  smtp_username: 'notify@example.com',
+  smtp_password: 'password123',
+  smtp_encryption: 'tls',
+  from_email: 'notify@example.com',
+  from_name: '阿里云盘同步通知',
+  enable_email_notifications: true
+};
+
+// 模拟备份设置数据
+const mockBackupSettings: BackupSettings = {
+  enable_auto_backup: true,
+  backup_interval: 24, // 24小时
+  backup_retention: 7, // 7天
+  backup_path: '/data/backups',
+  include_user_files: false
 };
 
 const Settings: React.FC = () => {
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [settings, setSettings] = useState<SystemSettings | null>(null);
-  const [generalForm] = Form.useForm();
-  const [syncForm] = Form.useForm();
-  const [storageForm] = Form.useForm();
-  const [securityForm] = Form.useForm();
+  const [systemForm] = Form.useForm();
+  const [emailForm] = Form.useForm();
+  const [backupForm] = Form.useForm();
+  const [loadingSys, setLoadingSys] = useState(false);
+  const [loadingEmail, setLoadingEmail] = useState(false);
+  const [loadingBackup, setLoadingBackup] = useState(false);
+  const [testingEmail, setTestingEmail] = useState(false);
+  const [runningBackup, setRunningBackup] = useState(false);
 
   useEffect(() => {
-    fetchSettings();
+    // 初始化表单值
+    systemForm.setFieldsValue(mockSystemSettings);
+    emailForm.setFieldsValue(mockEmailSettings);
+    backupForm.setFieldsValue(mockBackupSettings);
   }, []);
 
-  const fetchSettings = async () => {
-    setLoading(true);
+  const handleSystemSubmit = async (values: SystemSettings) => {
+    setLoadingSys(true);
     try {
       // 模拟API调用
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // 实际项目中应该从API获取设置数据
-      setSettings(mockSettings);
-      
-      // 设置表单初始值
-      generalForm.setFieldsValue(mockSettings.general);
-      syncForm.setFieldsValue(mockSettings.sync);
-      storageForm.setFieldsValue(mockSettings.storage);
-      securityForm.setFieldsValue(mockSettings.security);
+      console.log('System settings:', values);
+      message.success('系统设置已保存');
     } catch (error) {
-      console.error('获取系统设置失败:', error);
-      message.error('获取系统设置失败');
+      console.error('保存系统设置失败:', error);
+      message.error('保存系统设置失败');
     } finally {
-      setLoading(false);
+      setLoadingSys(false);
     }
   };
 
-  const handleSaveGeneral = async () => {
-    try {
-      const values = await generalForm.validateFields();
-      saveSettings('general', values);
-    } catch (error) {
-      console.error('表单验证失败:', error);
-    }
-  };
-
-  const handleSaveSync = async () => {
-    try {
-      const values = await syncForm.validateFields();
-      saveSettings('sync', values);
-    } catch (error) {
-      console.error('表单验证失败:', error);
-    }
-  };
-
-  const handleSaveStorage = async () => {
-    try {
-      const values = await storageForm.validateFields();
-      saveSettings('storage', values);
-    } catch (error) {
-      console.error('表单验证失败:', error);
-    }
-  };
-
-  const handleSaveSecurity = async () => {
-    try {
-      const values = await securityForm.validateFields();
-      saveSettings('security', values);
-    } catch (error) {
-      console.error('表单验证失败:', error);
-    }
-  };
-
-  const saveSettings = async (section: keyof SystemSettings, values: any) => {
-    setSaving(true);
+  const handleEmailSubmit = async (values: EmailSettings) => {
+    setLoadingEmail(true);
     try {
       // 模拟API调用
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // 更新本地设置数据
-      if (settings) {
-        setSettings({
-          ...settings,
-          [section]: values
-        });
-      }
-      
-      message.success('设置保存成功');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Email settings:', values);
+      message.success('邮件设置已保存');
     } catch (error) {
-      console.error('保存设置失败:', error);
-      message.error('保存设置失败');
+      console.error('保存邮件设置失败:', error);
+      message.error('保存邮件设置失败');
     } finally {
-      setSaving(false);
+      setLoadingEmail(false);
     }
   };
 
-  const items: TabsProps['items'] = [
-    {
-      key: '1',
-      label: (
-        <span>
-          <SettingOutlined />
-          常规设置
-        </span>
-      ),
-      children: (
-        <Form
-          form={generalForm}
-          layout="vertical"
-          initialValues={settings?.general}
-        >
-          <Row gutter={24}>
-            <Col span={24} md={12}>
+  const handleBackupSubmit = async (values: BackupSettings) => {
+    setLoadingBackup(true);
+    try {
+      // 模拟API调用
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Backup settings:', values);
+      message.success('备份设置已保存');
+    } catch (error) {
+      console.error('保存备份设置失败:', error);
+      message.error('保存备份设置失败');
+    } finally {
+      setLoadingBackup(false);
+    }
+  };
+
+  const testEmailSettings = async () => {
+    try {
+      // 验证表单
+      await emailForm.validateFields();
+      
+      setTestingEmail(true);
+      // 模拟API调用
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      message.success('测试邮件已发送，请检查收件箱');
+    } catch (error) {
+      console.error('测试邮件发送失败:', error);
+      message.error('测试邮件发送失败');
+    } finally {
+      setTestingEmail(false);
+    }
+  };
+
+  const runManualBackup = async () => {
+    try {
+      // 验证表单
+      await backupForm.validateFields();
+      
+      setRunningBackup(true);
+      // 模拟API调用
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      message.success('手动备份已完成');
+    } catch (error) {
+      console.error('手动备份失败:', error);
+      message.error('手动备份失败');
+    } finally {
+      setRunningBackup(false);
+    }
+  };
+
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const beforeUpload = (file: RcFile) => {
+    const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
+    if (!isJpgOrPng) {
+      message.error('只能上传JPG/PNG格式的图片!');
+    }
+    const isLt2M = file.size / 1024 / 1024 < 2;
+    if (!isLt2M) {
+      message.error('图片大小不能超过2MB!');
+    }
+    return isJpgOrPng && isLt2M;
+  };
+
+  return (
+    <div style={{ padding: '24px 0' }}>
+      <Card>
+        <Title level={3}>
+          <SettingOutlined /> 系统设置
+        </Title>
+        
+        <Tabs defaultActiveKey="system">
+          <TabPane 
+            tab={
+              <span>
+                <CloudServerOutlined /> 基本设置
+              </span>
+            } 
+            key="system"
+          >
+            <Form
+              form={systemForm}
+              layout="vertical"
+              onFinish={handleSystemSubmit}
+            >
+              <Alert
+                message="这些设置将影响整个系统的行为，请谨慎修改"
+                type="info"
+                showIcon
+                style={{ marginBottom: '20px' }}
+              />
+              
+              <Title level={4}>应用设置</Title>
               <Form.Item
-                name="siteName"
-                label="网站名称"
-                rules={[{ required: true, message: '请输入网站名称' }]}
+                name="app_name"
+                label="应用名称"
+                rules={[{ required: true, message: '请输入应用名称' }]}
               >
-                <Input placeholder="请输入网站名称" />
+                <Input placeholder="请输入应用名称" />
               </Form.Item>
-            </Col>
-            <Col span={24} md={12}>
+              
               <Form.Item
-                name="adminEmail"
+                name="app_url"
+                label="应用URL"
+                rules={[{ required: true, message: '请输入应用URL' }]}
+              >
+                <Input placeholder="请输入应用URL" />
+              </Form.Item>
+              
+              <Form.Item
+                name="app_logo"
+                label="应用Logo"
+              >
+                <Upload
+                  name="logo"
+                  listType="picture"
+                  maxCount={1}
+                  beforeUpload={beforeUpload}
+                >
+                  <Button icon={<UploadOutlined />}>上传Logo</Button>
+                </Upload>
+              </Form.Item>
+              
+              <Form.Item
+                name="admin_email"
                 label="管理员邮箱"
                 rules={[
                   { required: true, message: '请输入管理员邮箱' },
@@ -241,408 +291,318 @@ const Settings: React.FC = () => {
               >
                 <Input placeholder="请输入管理员邮箱" />
               </Form.Item>
-            </Col>
-          </Row>
-          
-          <Form.Item
-            name="siteDescription"
-            label="网站描述"
-          >
-            <TextArea rows={3} placeholder="请输入网站描述" />
-          </Form.Item>
-          
-          <Form.Item
-            name="logo"
-            label="网站Logo"
-          >
-            <Upload
-              name="logo"
-              listType="picture"
-              maxCount={1}
-              action="/api/upload" // 实际项目中应替换为实际的上传接口
-              beforeUpload={() => false} // 阻止自动上传
-            >
-              <Button icon={<UploadOutlined />}>选择图片</Button>
-            </Upload>
-          </Form.Item>
-          
-          <Form.Item
-            name="allowRegistration"
-            label="允许用户注册"
-            valuePropName="checked"
-          >
-            <Switch checkedChildren="开启" unCheckedChildren="关闭" />
-          </Form.Item>
-          
-          <Row gutter={24}>
-            <Col span={24} md={12}>
+              
+              <Divider />
+              
+              <Title level={4}>用户设置</Title>
               <Form.Item
-                name="defaultUserQuota"
-                label={
-                  <span>
-                    默认用户配额(GB)
-                    <Tooltip title="新用户默认存储空间配额，单位为GB">
-                      <QuestionCircleOutlined style={{ marginLeft: 4 }} />
-                    </Tooltip>
-                  </span>
-                }
-                rules={[{ required: true, message: '请输入默认用户配额' }]}
-              >
-                <InputNumber min={1} max={1000} style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-            <Col span={24} md={12}>
-              <Form.Item
-                name="maxTasksPerUser"
-                label={
-                  <span>
-                    每用户最大任务数
-                    <Tooltip title="每个用户可创建的最大同步任务数">
-                      <QuestionCircleOutlined style={{ marginLeft: 4 }} />
-                    </Tooltip>
-                  </span>
-                }
-                rules={[{ required: true, message: '请输入每用户最大任务数' }]}
-              >
-                <InputNumber min={1} max={100} style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-          </Row>
-          
-          <Form.Item>
-            <Button
-              type="primary"
-              icon={<SaveOutlined />}
-              onClick={handleSaveGeneral}
-              loading={saving}
-            >
-              保存设置
-            </Button>
-          </Form.Item>
-        </Form>
-      ),
-    },
-    {
-      key: '2',
-      label: (
-        <span>
-          <SyncOutlined />
-          同步设置
-        </span>
-      ),
-      children: (
-        <Form
-          form={syncForm}
-          layout="vertical"
-          initialValues={settings?.sync}
-        >
-          <Row gutter={24}>
-            <Col span={24} md={12}>
-              <Form.Item
-                name="maxConcurrentTasks"
-                label={
-                  <span>
-                    最大并发任务数
-                    <Tooltip title="系统同时执行的最大同步任务数">
-                      <QuestionCircleOutlined style={{ marginLeft: 4 }} />
-                    </Tooltip>
-                  </span>
-                }
-                rules={[{ required: true, message: '请输入最大并发任务数' }]}
-              >
-                <InputNumber min={1} max={20} style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-            <Col span={24} md={12}>
-              <Form.Item
-                name="defaultSyncInterval"
-                label={
-                  <span>
-                    默认同步间隔(小时)
-                    <Tooltip title="新创建任务的默认同步间隔时间">
-                      <QuestionCircleOutlined style={{ marginLeft: 4 }} />
-                    </Tooltip>
-                  </span>
-                }
-                rules={[{ required: true, message: '请输入默认同步间隔' }]}
-              >
-                <InputNumber min={1} max={168} style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-          </Row>
-          
-          <Row gutter={24}>
-            <Col span={24} md={12}>
-              <Form.Item
-                name="timeoutSeconds"
-                label="同步超时时间(秒)"
-                rules={[{ required: true, message: '请输入同步超时时间' }]}
-              >
-                <InputNumber min={30} max={3600} style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-            <Col span={24} md={12}>
-              <Form.Item
-                name="logLevel"
-                label="日志级别"
-                rules={[{ required: true, message: '请选择日志级别' }]}
-              >
-                <Select>
-                  <Option value="debug">调试</Option>
-                  <Option value="info">信息</Option>
-                  <Option value="warning">警告</Option>
-                  <Option value="error">错误</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
-          
-          <Row gutter={24}>
-            <Col span={24} md={12}>
-              <Form.Item
-                name="retryCount"
-                label="失败重试次数"
-                rules={[{ required: true, message: '请输入失败重试次数' }]}
-              >
-                <InputNumber min={0} max={10} style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-            <Col span={24} md={12}>
-              <Form.Item
-                name="retryDelaySeconds"
-                label="重试延迟时间(秒)"
-                rules={[{ required: true, message: '请输入重试延迟时间' }]}
-              >
-                <InputNumber min={5} max={300} style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-          </Row>
-          
-          <Form.Item>
-            <Button
-              type="primary"
-              icon={<SaveOutlined />}
-              onClick={handleSaveSync}
-              loading={saving}
-            >
-              保存设置
-            </Button>
-          </Form.Item>
-        </Form>
-      ),
-    },
-    {
-      key: '3',
-      label: (
-        <span>
-          <DatabaseOutlined />
-          存储设置
-        </span>
-      ),
-      children: (
-        <Form
-          form={storageForm}
-          layout="vertical"
-          initialValues={settings?.storage}
-        >
-          <Alert
-            message="警告"
-            description="修改存储路径将影响现有数据，请确保新路径有足够的存储空间并且具有适当的权限。"
-            type="warning"
-            showIcon
-            style={{ marginBottom: '20px' }}
-          />
-          
-          <Row gutter={24}>
-            <Col span={24} md={12}>
-              <Form.Item
-                name="storagePath"
-                label="存储路径"
-                rules={[{ required: true, message: '请输入存储路径' }]}
-              >
-                <Input placeholder="/data/storage" />
-              </Form.Item>
-            </Col>
-            <Col span={24} md={12}>
-              <Form.Item
-                name="tempPath"
-                label="临时文件路径"
-                rules={[{ required: true, message: '请输入临时文件路径' }]}
-              >
-                <Input placeholder="/data/temp" />
-              </Form.Item>
-            </Col>
-          </Row>
-          
-          <Row gutter={24}>
-            <Col span={24} md={12}>
-              <Form.Item
-                name="maxFileSize"
-                label="最大文件大小(MB)"
-                rules={[{ required: true, message: '请输入最大文件大小' }]}
-              >
-                <InputNumber min={1} max={10240} style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-            <Col span={24} md={12}>
-              <Form.Item
-                name="cleanTempFilesOlderThan"
-                label="清理临时文件(小时)"
-                rules={[{ required: true, message: '请输入清理临时文件时间' }]}
-              >
-                <InputNumber min={1} max={168} style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-          </Row>
-          
-          <Form.Item
-            name="allowedFileTypes"
-            label="允许的文件类型"
-            extra="输入允许的文件扩展名，用逗号分隔。使用 * 表示允许所有类型。"
-          >
-            <Select
-              mode="tags"
-              style={{ width: '100%' }}
-              placeholder="输入允许的文件类型"
-              tokenSeparators={[',']}
-            />
-          </Form.Item>
-          
-          <Form.Item>
-            <Button
-              type="primary"
-              icon={<SaveOutlined />}
-              onClick={handleSaveStorage}
-              loading={saving}
-            >
-              保存设置
-            </Button>
-          </Form.Item>
-        </Form>
-      ),
-    },
-    {
-      key: '4',
-      label: (
-        <span>
-          <SecurityScanOutlined />
-          安全设置
-        </span>
-      ),
-      children: (
-        <Form
-          form={securityForm}
-          layout="vertical"
-          initialValues={settings?.security}
-        >
-          <Row gutter={24}>
-            <Col span={24} md={12}>
-              <Form.Item
-                name="sessionTimeoutMinutes"
-                label="会话超时时间(分钟)"
-                rules={[{ required: true, message: '请输入会话超时时间' }]}
-              >
-                <InputNumber min={5} max={1440} style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-            <Col span={24} md={12}>
-              <Form.Item
-                name="enableTwoFactor"
-                label="启用两因素认证"
+                name="enable_registration"
+                label="允许注册"
                 valuePropName="checked"
               >
                 <Switch checkedChildren="开启" unCheckedChildren="关闭" />
               </Form.Item>
-            </Col>
-          </Row>
-          
-          <Divider orientation="left">密码策略</Divider>
-          
-          <Row gutter={24}>
-            <Col span={24} md={12}>
+              
               <Form.Item
-                name="passwordMinLength"
-                label="密码最小长度"
-                rules={[{ required: true, message: '请输入密码最小长度' }]}
+                name="max_users"
+                label="最大用户数"
+                rules={[{ required: true, message: '请输入最大用户数' }]}
               >
-                <InputNumber min={6} max={32} style={{ width: '100%' }} />
+                <InputNumber min={1} style={{ width: '100%' }} />
               </Form.Item>
-            </Col>
-            <Col span={24} md={12}>
+              
               <Form.Item
-                name="passwordRequireNumbers"
-                label="要求包含数字"
+                name="default_user_quota"
+                label="默认用户存储配额"
+                rules={[{ required: true, message: '请输入默认用户存储配额' }]}
+              >
+                <InputNumber
+                  min={1024 * 1024 * 100} // 100MB
+                  step={1024 * 1024 * 100} // 100MB
+                  style={{ width: '100%' }}
+                  formatter={value => formatBytes(value as number)}
+                  parser={value => {
+                    // 简单处理，实际应用需要更复杂的解析
+                    const num = parseFloat(value!.replace(/[^\d.]/g, ''));
+                    if (value!.includes('GB')) {
+                      return num * 1024 * 1024 * 1024;
+                    } else if (value!.includes('MB')) {
+                      return num * 1024 * 1024;
+                    }
+                    return num;
+                  }}
+                />
+              </Form.Item>
+              
+              <Form.Item
+                name="file_size_limit"
+                label="文件大小限制"
+                rules={[{ required: true, message: '请输入文件大小限制' }]}
+              >
+                <InputNumber
+                  min={1024 * 1024} // 1MB
+                  step={1024 * 1024 * 10} // 10MB
+                  style={{ width: '100%' }}
+                  formatter={value => formatBytes(value as number)}
+                  parser={value => {
+                    const num = parseFloat(value!.replace(/[^\d.]/g, ''));
+                    if (value!.includes('GB')) {
+                      return num * 1024 * 1024 * 1024;
+                    } else if (value!.includes('MB')) {
+                      return num * 1024 * 1024;
+                    }
+                    return num;
+                  }}
+                />
+              </Form.Item>
+              
+              <Divider />
+              
+              <Title level={4}>存储设置</Title>
+              <Form.Item
+                name="storage_path"
+                label="存储路径"
+                rules={[{ required: true, message: '请输入存储路径' }]}
+              >
+                <Input placeholder="请输入存储路径" />
+              </Form.Item>
+              
+              <Divider />
+              
+              <Title level={4}>同步设置</Title>
+              <Form.Item
+                name="enable_auto_sync"
+                label="自动同步"
                 valuePropName="checked"
               >
-                <Switch checkedChildren="是" unCheckedChildren="否" />
+                <Switch checkedChildren="开启" unCheckedChildren="关闭" />
               </Form.Item>
-            </Col>
-            <Col span={24} md={12}>
+              
               <Form.Item
-                name="passwordRequireSpecialChars"
-                label="要求包含特殊字符"
-                valuePropName="checked"
+                name="auto_sync_interval"
+                label="自动同步间隔 (分钟)"
+                rules={[{ required: true, message: '请输入自动同步间隔' }]}
               >
-                <Switch checkedChildren="是" unCheckedChildren="否" />
+                <InputNumber min={5} style={{ width: '100%' }} />
               </Form.Item>
-            </Col>
-          </Row>
-          
-          <Divider orientation="left">登录保护</Divider>
-          
-          <Row gutter={24}>
-            <Col span={24} md={12}>
+              
               <Form.Item
-                name="maxLoginAttempts"
-                label="最大登录尝试次数"
-                rules={[{ required: true, message: '请输入最大登录尝试次数' }]}
+                name="aliyun_url"
+                label="阿里云盘URL"
+                rules={[{ required: true, message: '请输入阿里云盘URL' }]}
               >
-                <InputNumber min={1} max={10} style={{ width: '100%' }} />
+                <Input placeholder="请输入阿里云盘URL" />
               </Form.Item>
-            </Col>
-            <Col span={24} md={12}>
-              <Form.Item
-                name="lockDurationMinutes"
-                label="账户锁定时长(分钟)"
-                rules={[{ required: true, message: '请输入账户锁定时长' }]}
-              >
-                <InputNumber min={5} max={1440} style={{ width: '100%' }} />
+              
+              <Form.Item>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  icon={<SaveOutlined />}
+                  loading={loadingSys}
+                >
+                  保存设置
+                </Button>
               </Form.Item>
-            </Col>
-          </Row>
+            </Form>
+          </TabPane>
           
-          <Form.Item>
-            <Button
-              type="primary"
-              icon={<SaveOutlined />}
-              onClick={handleSaveSecurity}
-              loading={saving}
+          <TabPane 
+            tab={
+              <span>
+                <MailOutlined /> 邮件设置
+              </span>
+            } 
+            key="email"
+          >
+            <Form
+              form={emailForm}
+              layout="vertical"
+              onFinish={handleEmailSubmit}
             >
-              保存设置
-            </Button>
-          </Form.Item>
-        </Form>
-      ),
-    },
-  ];
-
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '100px 0' }}>
-        <Spin size="large" tip="加载中..." />
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ padding: '24px 0' }}>
-      <Card>
-        <Title level={3}>系统设置</Title>
-        <Paragraph type="secondary">
-          在这里管理系统的各项配置，修改后记得点击对应页面的保存按钮。
-        </Paragraph>
-        
-        <Tabs defaultActiveKey="1" items={items} />
+              <Alert
+                message="邮件设置用于发送系统通知和用户验证邮件"
+                type="info"
+                showIcon
+                style={{ marginBottom: '20px' }}
+              />
+              
+              <Form.Item
+                name="smtp_server"
+                label="SMTP服务器"
+                rules={[{ required: true, message: '请输入SMTP服务器地址' }]}
+              >
+                <Input placeholder="例如: smtp.gmail.com" />
+              </Form.Item>
+              
+              <Form.Item
+                name="smtp_port"
+                label="SMTP端口"
+                rules={[{ required: true, message: '请输入SMTP端口' }]}
+              >
+                <InputNumber min={1} max={65535} style={{ width: '100%' }} />
+              </Form.Item>
+              
+              <Form.Item
+                name="smtp_encryption"
+                label="加密方式"
+                rules={[{ required: true, message: '请选择加密方式' }]}
+              >
+                <Radio.Group>
+                  <Radio value="none">无</Radio>
+                  <Radio value="tls">TLS</Radio>
+                  <Radio value="ssl">SSL</Radio>
+                </Radio.Group>
+              </Form.Item>
+              
+              <Form.Item
+                name="smtp_username"
+                label="SMTP用户名"
+                rules={[{ required: true, message: '请输入SMTP用户名' }]}
+              >
+                <Input placeholder="请输入SMTP用户名" />
+              </Form.Item>
+              
+              <Form.Item
+                name="smtp_password"
+                label="SMTP密码"
+                rules={[{ required: true, message: '请输入SMTP密码' }]}
+              >
+                <Input.Password placeholder="请输入SMTP密码" />
+              </Form.Item>
+              
+              <Form.Item
+                name="from_email"
+                label="发件人邮箱"
+                rules={[
+                  { required: true, message: '请输入发件人邮箱' },
+                  { type: 'email', message: '请输入有效的邮箱地址' }
+                ]}
+              >
+                <Input placeholder="请输入发件人邮箱" />
+              </Form.Item>
+              
+              <Form.Item
+                name="from_name"
+                label="发件人名称"
+                rules={[{ required: true, message: '请输入发件人名称' }]}
+              >
+                <Input placeholder="请输入发件人名称" />
+              </Form.Item>
+              
+              <Form.Item
+                name="enable_email_notifications"
+                label="启用邮件通知"
+                valuePropName="checked"
+              >
+                <Switch checkedChildren="开启" unCheckedChildren="关闭" />
+              </Form.Item>
+              
+              <Form.Item>
+                <Space>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    icon={<SaveOutlined />}
+                    loading={loadingEmail}
+                  >
+                    保存设置
+                  </Button>
+                  <Button
+                    icon={<MailOutlined />}
+                    onClick={testEmailSettings}
+                    loading={testingEmail}
+                  >
+                    测试邮件设置
+                  </Button>
+                </Space>
+              </Form.Item>
+            </Form>
+          </TabPane>
+          
+          <TabPane 
+            tab={
+              <span>
+                <DatabaseOutlined /> 备份设置
+              </span>
+            } 
+            key="backup"
+          >
+            <Form
+              form={backupForm}
+              layout="vertical"
+              onFinish={handleBackupSubmit}
+            >
+              <Alert
+                message="备份设置用于定期备份系统数据和用户文件"
+                type="info"
+                showIcon
+                style={{ marginBottom: '20px' }}
+              />
+              
+              <Form.Item
+                name="enable_auto_backup"
+                label="自动备份"
+                valuePropName="checked"
+              >
+                <Switch checkedChildren="开启" unCheckedChildren="关闭" />
+              </Form.Item>
+              
+              <Form.Item
+                name="backup_interval"
+                label="备份间隔 (小时)"
+                rules={[{ required: true, message: '请输入备份间隔' }]}
+              >
+                <InputNumber min={1} style={{ width: '100%' }} />
+              </Form.Item>
+              
+              <Form.Item
+                name="backup_retention"
+                label="备份保留时间 (天)"
+                rules={[{ required: true, message: '请输入备份保留时间' }]}
+              >
+                <InputNumber min={1} style={{ width: '100%' }} />
+              </Form.Item>
+              
+              <Form.Item
+                name="backup_path"
+                label="备份路径"
+                rules={[{ required: true, message: '请输入备份路径' }]}
+              >
+                <Input placeholder="请输入备份路径" />
+              </Form.Item>
+              
+              <Form.Item
+                name="include_user_files"
+                label="包含用户文件"
+                valuePropName="checked"
+                extra="启用后将备份所有用户文件，可能占用大量存储空间"
+              >
+                <Switch checkedChildren="开启" unCheckedChildren="关闭" />
+              </Form.Item>
+              
+              <Form.Item>
+                <Space>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    icon={<SaveOutlined />}
+                    loading={loadingBackup}
+                  >
+                    保存设置
+                  </Button>
+                  <Button
+                    icon={<DatabaseOutlined />}
+                    onClick={runManualBackup}
+                    loading={runningBackup}
+                  >
+                    立即备份
+                  </Button>
+                </Space>
+              </Form.Item>
+            </Form>
+          </TabPane>
+        </Tabs>
       </Card>
     </div>
   );

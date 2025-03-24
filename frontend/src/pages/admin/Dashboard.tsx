@@ -1,298 +1,228 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Typography, Table, Progress, List, Space, Spin, Alert } from 'antd';
+import { 
+  Card, 
+  Row, 
+  Col, 
+  Statistic, 
+  Table, 
+  Typography, 
+  Tag, 
+  List, 
+  Avatar,
+  Space,
+  Button
+} from 'antd';
 import { 
   UserOutlined, 
-  FileOutlined, 
   CloudSyncOutlined, 
-  CheckCircleOutlined,
-  WarningOutlined,
+  CheckCircleOutlined, 
+  ExclamationCircleOutlined,
   ClockCircleOutlined,
-  HddOutlined
+  EyeOutlined
 } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 
 const { Title, Text } = Typography;
 
-interface StatisticsData {
-  totalUsers: number;
-  totalTasks: number;
-  activeTasks: number;
-  completedTasks: number;
-  errorTasks: number;
-  diskUsage: number;
-  diskTotal: number;
-  recentSyncs: {
-    id: number;
-    taskName: string;
-    time: string;
-    status: 'success' | 'error' | 'warning';
-    message: string;
-  }[];
-  topTasks: {
-    id: number;
-    name: string;
-    fileCount: number;
-    syncSize: number;
-  }[];
-}
-
 // 模拟数据
-const mockStatistics: StatisticsData = {
-  totalUsers: 12,
-  totalTasks: 24,
-  activeTasks: 16,
-  completedTasks: 6,
-  errorTasks: 2,
-  diskUsage: 128 * 1024 * 1024 * 1024, // 128GB
-  diskTotal: 500 * 1024 * 1024 * 1024, // 500GB
-  recentSyncs: [
-    {
-      id: 1,
-      taskName: '文档同步',
-      time: '2023-03-23 14:35:22',
-      status: 'success',
-      message: '成功同步 25 个文件'
-    },
-    {
-      id: 2,
-      taskName: '照片备份',
-      time: '2023-03-23 12:22:15',
-      status: 'error',
-      message: '无法连接到阿里云盘'
-    },
-    {
-      id: 3,
-      taskName: '视频同步',
-      time: '2023-03-23 10:15:43',
-      status: 'warning',
-      message: '3 个文件无法同步'
-    },
-    {
-      id: 4,
-      taskName: '音乐同步',
-      time: '2023-03-23 08:05:11',
-      status: 'success',
-      message: '成功同步 12 个文件'
-    }
-  ],
-  topTasks: [
-    {
-      id: 1,
-      name: '文档同步',
-      fileCount: 1256,
-      syncSize: 5 * 1024 * 1024 * 1024 // 5GB
-    },
-    {
-      id: 2,
-      name: '照片备份',
-      fileCount: 3256,
-      syncSize: 25 * 1024 * 1024 * 1024 // 25GB
-    },
-    {
-      id: 3,
-      name: '视频同步',
-      fileCount: 512,
-      syncSize: 75 * 1024 * 1024 * 1024 // 75GB
-    },
-    {
-      id: 4,
-      name: '音乐同步',
-      fileCount: 2048,
-      syncSize: 12 * 1024 * 1024 * 1024 // 12GB
-    }
-  ]
+const mockStats = {
+  totalUsers: 156,
+  activeUsers: 89,
+  totalTasks: 342,
+  activeTasks: 127,
+  successTasks: 98,
+  failedTasks: 14,
+  pendingTasks: 15,
+  totalStorage: 1024 * 1024 * 1024 * 50, // 50GB
+  usedStorage: 1024 * 1024 * 1024 * 32, // 32GB
 };
 
-const Dashboard: React.FC = () => {
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<StatisticsData | null>(null);
-  const [error, setError] = useState<string | null>(null);
+const mockRecentUsers = [
+  { id: 1, username: '张三', email: 'zhangsan@example.com', lastLogin: '2023-03-21 15:30', status: 'active' },
+  { id: 2, username: '李四', email: 'lisi@example.com', lastLogin: '2023-03-21 12:45', status: 'active' },
+  { id: 3, username: '王五', email: 'wangwu@example.com', lastLogin: '2023-03-20 18:30', status: 'inactive' },
+  { id: 4, username: '赵六', email: 'zhaoliu@example.com', lastLogin: '2023-03-19 09:15', status: 'active' },
+];
+
+const mockRecentTasks = [
+  { id: 1, name: '文档同步', user: '张三', status: 'success', time: '2023-03-22 14:30', files: 56 },
+  { id: 2, name: '照片备份', user: '李四', status: 'failed', time: '2023-03-22 13:15', files: 128 },
+  { id: 3, name: '视频同步', user: '王五', status: 'pending', time: '2023-03-22 12:00', files: 5 },
+  { id: 4, name: '音乐同步', user: '赵六', status: 'success', time: '2023-03-22 10:45', files: 87 },
+];
+
+const formatBytes = (bytes: number) => {
+  if (bytes === 0) return '0 Bytes';
+  
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+const getStatusTag = (status: string) => {
+  switch (status) {
+    case 'success':
+      return <Tag color="success" icon={<CheckCircleOutlined />}>成功</Tag>;
+    case 'failed':
+      return <Tag color="error" icon={<ExclamationCircleOutlined />}>失败</Tag>;
+    case 'pending':
+      return <Tag color="processing" icon={<ClockCircleOutlined />}>等待中</Tag>;
+    case 'active':
+      return <Tag color="green">活跃</Tag>;
+    case 'inactive':
+      return <Tag color="default">非活跃</Tag>;
+    default:
+      return <Tag>{status}</Tag>;
+  }
+};
+
+const AdminDashboard: React.FC = () => {
+  const [stats, setStats] = useState(mockStats);
+  const [recentUsers, setRecentUsers] = useState(mockRecentUsers);
+  const [recentTasks, setRecentTasks] = useState(mockRecentTasks);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchStatistics();
+    fetchDashboardData();
   }, []);
 
-  const fetchStatistics = async () => {
+  const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      // 模拟API调用
+      // 在实际应用中，这里会从API获取数据
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // 实际项目中这里应该调用后端API
-      setStats(mockStatistics);
-    } catch (err) {
-      console.error('获取统计数据失败:', err);
-      setError('获取统计数据失败，请稍后重试');
+      // 假设从API获取的数据
+      setStats(mockStats);
+      setRecentUsers(mockRecentUsers);
+      setRecentTasks(mockRecentTasks);
+    } catch (error) {
+      console.error('获取仪表盘数据失败:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const formatBytes = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '100px 0' }}>
-        <Spin size="large" tip="加载中..." />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <Alert
-        message="错误"
-        description={error}
-        type="error"
-        showIcon
-      />
-    );
-  }
-
-  if (!stats) {
-    return (
-      <Alert
-        message="数据不可用"
-        description="无法加载仪表盘数据"
-        type="warning"
-        showIcon
-      />
-    );
-  }
-
-  const diskUsagePercent = Math.round((stats.diskUsage / stats.diskTotal) * 100);
-
   return (
     <div style={{ padding: '24px 0' }}>
-      <Title level={3}>系统概览</Title>
+      <Title level={3}>管理员仪表板</Title>
       
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} md={6}>
+      {/* 统计卡片 */}
+      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+        <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
-              title="用户总数"
+              title="总用户数"
               value={stats.totalUsers}
               prefix={<UserOutlined />}
             />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="任务总数"
-              value={stats.totalTasks}
-              prefix={<FileOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="活跃任务"
-              value={stats.activeTasks}
-              prefix={<CloudSyncOutlined />}
-              valueStyle={{ color: '#1890ff' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="错误任务"
-              value={stats.errorTasks}
-              prefix={<WarningOutlined />}
-              valueStyle={{ color: '#ff4d4f' }}
-            />
-          </Card>
-        </Col>
-      </Row>
-      
-      <Row gutter={[16, 16]} style={{ marginTop: '16px' }}>
-        <Col xs={24} md={12}>
-          <Card title="磁盘使用情况">
-            <Statistic
-              title="已使用空间"
-              value={formatBytes(stats.diskUsage)}
-              suffix={` / ${formatBytes(stats.diskTotal)}`}
-              prefix={<HddOutlined />}
-            />
-            <div style={{ marginTop: '20px' }}>
-              <Progress
-                percent={diskUsagePercent}
-                status={diskUsagePercent > 90 ? 'exception' : 'normal'}
-                strokeWidth={12}
-              />
+            <div style={{ marginTop: '10px' }}>
+              <Text type="secondary">活跃用户: {stats.activeUsers}</Text>
             </div>
           </Card>
         </Col>
-        
-        <Col xs={24} md={12}>
-          <Card title="最近同步">
-            <List
-              dataSource={stats.recentSyncs}
-              renderItem={item => {
-                let icon;
-                
-                if (item.status === 'success') {
-                  icon = <CheckCircleOutlined style={{ color: '#52c41a' }} />;
-                } else if (item.status === 'error') {
-                  icon = <WarningOutlined style={{ color: '#ff4d4f' }} />;
-                } else {
-                  icon = <ClockCircleOutlined style={{ color: '#faad14' }} />;
-                }
-                
-                return (
-                  <List.Item>
-                    <Space>
-                      {icon}
-                      <Link to={`/tasks/${item.id}`}>{item.taskName}</Link>
-                      <Text type="secondary" style={{ marginLeft: '8px' }}>{item.time}</Text>
-                      <Text>{item.message}</Text>
-                    </Space>
-                  </List.Item>
-                );
-              }}
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title="总任务数"
+              value={stats.totalTasks}
+              prefix={<CloudSyncOutlined />}
             />
+            <div style={{ marginTop: '10px' }}>
+              <Text type="secondary">运行中: {stats.activeTasks}</Text>
+            </div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title="同步状态"
+              value={stats.successTasks}
+              valueStyle={{ color: '#3f8600' }}
+              prefix={<CheckCircleOutlined />}
+              suffix={`/${stats.activeTasks}`}
+            />
+            <div style={{ marginTop: '10px' }}>
+              <Text type="danger">失败任务: {stats.failedTasks}</Text>
+            </div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title="存储使用"
+              value={(stats.usedStorage / stats.totalStorage * 100).toFixed(2)}
+              suffix="%"
+            />
+            <div style={{ marginTop: '10px' }}>
+              <Text type="secondary">{formatBytes(stats.usedStorage)} / {formatBytes(stats.totalStorage)}</Text>
+            </div>
           </Card>
         </Col>
       </Row>
       
-      <Row style={{ marginTop: '16px' }}>
-        <Col span={24}>
-          <Card title="热门任务">
-            <Table
-              dataSource={stats.topTasks}
-              rowKey="id"
-              pagination={false}
-              columns={[
-                {
-                  title: '任务名称',
-                  dataIndex: 'name',
-                  key: 'name',
-                  render: (text, record) => <Link to={`/tasks/${record.id}`}>{text}</Link>
-                },
-                {
-                  title: '文件数',
-                  dataIndex: 'fileCount',
-                  key: 'fileCount',
-                  sorter: (a, b) => a.fileCount - b.fileCount
-                },
-                {
-                  title: '同步大小',
-                  dataIndex: 'syncSize',
-                  key: 'syncSize',
-                  sorter: (a, b) => a.syncSize - b.syncSize,
-                  render: (size) => formatBytes(size)
-                }
-              ]}
+      {/* 最近用户 */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} lg={12}>
+          <Card title="最近活跃用户" extra={<Link to="/admin/users">查看全部</Link>}>
+            <List
+              loading={loading}
+              dataSource={recentUsers}
+              renderItem={user => (
+                <List.Item
+                  key={user.id}
+                  actions={[
+                    <Link to={`/admin/users/${user.id}`} key="view">
+                      <Button type="link" icon={<EyeOutlined />} size="small">
+                        查看
+                      </Button>
+                    </Link>
+                  ]}
+                >
+                  <List.Item.Meta
+                    avatar={<Avatar icon={<UserOutlined />} />}
+                    title={<Link to={`/admin/users/${user.id}`}>{user.username}</Link>}
+                    description={user.email}
+                  />
+                  <div>
+                    <div>{user.lastLogin}</div>
+                    <div>{getStatusTag(user.status)}</div>
+                  </div>
+                </List.Item>
+              )}
+            />
+          </Card>
+        </Col>
+        
+        {/* 最近任务 */}
+        <Col xs={24} lg={12}>
+          <Card title="最近同步任务" extra={<Link to="/admin/tasks">查看全部</Link>}>
+            <List
+              loading={loading}
+              dataSource={recentTasks}
+              renderItem={task => (
+                <List.Item
+                  key={task.id}
+                  actions={[
+                    <Link to={`/admin/tasks/${task.id}`} key="view">
+                      <Button type="link" icon={<EyeOutlined />} size="small">
+                        详情
+                      </Button>
+                    </Link>
+                  ]}
+                >
+                  <List.Item.Meta
+                    title={<Link to={`/admin/tasks/${task.id}`}>{task.name}</Link>}
+                    description={`用户: ${task.user} | 文件数: ${task.files}`}
+                  />
+                  <div>
+                    <div>{task.time}</div>
+                    <div>{getStatusTag(task.status)}</div>
+                  </div>
+                </List.Item>
+              )}
             />
           </Card>
         </Col>
@@ -301,4 +231,4 @@ const Dashboard: React.FC = () => {
   );
 };
 
-export default Dashboard; 
+export default AdminDashboard; 

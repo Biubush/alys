@@ -3,38 +3,34 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Card, 
   Descriptions, 
-  Button, 
-  Tabs, 
-  Table, 
-  Tag, 
-  Space, 
   Typography, 
+  Button, 
+  Space, 
+  Divider, 
   Spin, 
-  Empty, 
-  message,
-  Modal,
-  Form,
-  Input,
-  Select,
+  Tag, 
+  Tabs,
+  Empty,
+  Table,
+  List,
   Avatar,
-  Divider
+  Popconfirm,
+  message
 } from 'antd';
 import {
   UserOutlined,
   EditOutlined,
-  LockOutlined,
   DeleteOutlined,
-  HistoryOutlined,
-  FileOutlined,
+  LockOutlined,
+  UnlockOutlined,
+  EyeOutlined,
   MailOutlined,
-  KeyOutlined,
-  SaveOutlined,
-  RollbackOutlined
+  ClockCircleOutlined,
+  CloudSyncOutlined
 } from '@ant-design/icons';
-import type { TabsProps } from 'antd';
 
 const { Title, Text } = Typography;
-const { Option } = Select;
+const { TabPane } = Tabs;
 
 interface User {
   id: number;
@@ -44,209 +40,201 @@ interface User {
   status: 'active' | 'inactive' | 'locked';
   created_at: string;
   last_login: string;
-  phone?: string;
-  avatar?: string;
-  tasks?: {
-    id: number;
-    name: string;
-    status: string;
-    last_sync: string;
-  }[];
-  logs?: {
-    id: number;
-    action: string;
-    time: string;
-    ip: string;
-    details: string;
-  }[];
+  login_count: number;
+  tasks_count: number;
+  storage_used: number;
+}
+
+interface Task {
+  id: number;
+  name: string;
+  source_path: string;
+  target_path: string;
+  schedule: string;
+  status: string;
+  last_sync: string;
+}
+
+interface LoginLog {
+  id: number;
+  time: string;
+  ip: string;
+  device: string;
+  success: boolean;
 }
 
 // 模拟用户数据
 const mockUser: User = {
-  id: 2,
-  username: 'user1',
-  email: 'user1@example.com',
-  role: 'user',
+  id: 1,
+  username: '张三',
+  email: 'zhangsan@example.com',
+  role: 'admin',
   status: 'active',
-  created_at: '2023-02-05 14:22:10',
-  last_login: '2023-03-22 16:45:32',
-  phone: '13800138000',
-  avatar: '',
-  tasks: [
-    {
-      id: 1,
-      name: '文档同步',
-      status: 'active',
-      last_sync: '2023-03-22 14:30:00'
-    },
-    {
-      id: 2,
-      name: '照片备份',
-      status: 'paused',
-      last_sync: '2023-03-20 09:15:00'
-    }
-  ],
-  logs: [
-    {
-      id: 1,
-      action: '登录',
-      time: '2023-03-22 16:45:32',
-      ip: '192.168.1.100',
-      details: '通过网页登录'
-    },
-    {
-      id: 2,
-      action: '修改任务',
-      time: '2023-03-22 16:50:45',
-      ip: '192.168.1.100',
-      details: '修改了任务 "文档同步"'
-    },
-    {
-      id: 3,
-      action: '添加任务',
-      time: '2023-03-21 10:25:16',
-      ip: '192.168.1.100',
-      details: '创建了新任务 "照片备份"'
-    },
-    {
-      id: 4,
-      action: '登录',
-      time: '2023-03-21 10:20:05',
-      ip: '192.168.1.100',
-      details: '通过网页登录'
-    }
-  ]
+  created_at: '2023-02-15 10:30:00',
+  last_login: '2023-03-21 15:30:00',
+  login_count: 42,
+  tasks_count: 5,
+  storage_used: 1024 * 1024 * 1024 * 2 // 2GB
 };
+
+// 模拟任务数据
+const mockTasks: Task[] = [
+  {
+    id: 1,
+    name: '文档同步',
+    source_path: '/文档',
+    target_path: '/本地备份/文档',
+    schedule: '每天',
+    status: 'active',
+    last_sync: '2023-03-22 14:30:00'
+  },
+  {
+    id: 2,
+    name: '照片备份',
+    source_path: '/照片',
+    target_path: '/本地备份/照片',
+    schedule: '每周',
+    status: 'paused',
+    last_sync: '2023-03-20 09:15:00'
+  }
+];
+
+// 模拟登录日志
+const mockLoginLogs: LoginLog[] = [
+  {
+    id: 1,
+    time: '2023-03-21 15:30:00',
+    ip: '192.168.1.100',
+    device: 'Chrome / Windows 10',
+    success: true
+  },
+  {
+    id: 2,
+    time: '2023-03-20 09:45:00',
+    ip: '192.168.1.100',
+    device: 'Firefox / Windows 10',
+    success: true
+  },
+  {
+    id: 3,
+    time: '2023-03-18 18:20:00',
+    ip: '192.168.1.102',
+    device: 'Safari / macOS',
+    success: false
+  }
+];
 
 const UserDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const [resetPasswordVisible, setResetPasswordVisible] = useState(false);
-  const [form] = Form.useForm();
-  const [passwordForm] = Form.useForm();
-
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loginLogs, setLoginLogs] = useState<LoginLog[]>([]);
+  
   useEffect(() => {
     fetchUserDetails();
   }, [id]);
-
+  
   const fetchUserDetails = async () => {
     setLoading(true);
     try {
       // 模拟API调用
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // 在实际项目中，这里应该从API获取用户数据
+      // 实际项目中应该从API获取数据
       setUser(mockUser);
+      setTasks(mockTasks);
+      setLoginLogs(mockLoginLogs);
     } catch (error) {
       console.error('获取用户详情失败:', error);
-      message.error('获取用户详情失败');
     } finally {
       setLoading(false);
     }
   };
-
-  const handleEditUser = () => {
+  
+  const handleLockUser = async (locked: boolean) => {
     if (!user) return;
     
-    form.setFieldsValue({
-      username: user.username,
-      email: user.email,
-      phone: user.phone || '',
-      role: user.role,
-      status: user.status
-    });
-    
-    setEditModalVisible(true);
-  };
-
-  const handleEditModalOk = async () => {
     try {
-      const values = await form.validateFields();
-      
       // 模拟API调用
       await new Promise(resolve => setTimeout(resolve, 500));
-      
-      message.success('用户信息更新成功');
-      setEditModalVisible(false);
-      
-      // 更新用户信息
-      if (user) {
-        setUser({
-          ...user,
-          ...values
-        });
-      }
+      message.success(locked ? '用户已锁定' : '用户已解锁');
+      setUser({ ...user, status: locked ? 'locked' : 'active' });
     } catch (error) {
-      console.error('表单验证失败:', error);
+      message.error('操作失败，请稍后重试');
     }
   };
-
-  const handleResetPassword = () => {
-    passwordForm.resetFields();
-    setResetPasswordVisible(true);
-  };
-
-  const handleResetPasswordOk = async () => {
+  
+  const handleDeleteUser = async () => {
     try {
-      const values = await passwordForm.validateFields();
-      
       // 模拟API调用
       await new Promise(resolve => setTimeout(resolve, 500));
-      
-      message.success('密码重置成功');
-      setResetPasswordVisible(false);
+      message.success('用户删除成功');
+      navigate('/admin/users');
     } catch (error) {
-      console.error('表单验证失败:', error);
+      message.error('删除失败，请稍后重试');
     }
   };
-
-  const handleDeleteUser = () => {
-    Modal.confirm({
-      title: '删除用户',
-      content: '确定要删除此用户吗？此操作不可撤销。',
-      okText: '删除',
-      okType: 'danger',
-      cancelText: '取消',
-      onOk: async () => {
-        try {
-          // 模拟API调用
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          message.success('用户删除成功');
-          navigate('/admin/users');
-        } catch (error) {
-          console.error('删除用户失败:', error);
-          message.error('删除用户失败');
-        }
-      }
-    });
-  };
-
+  
   const getStatusTag = (status: string) => {
-    if (status === 'active') {
-      return <Tag color="green">活跃</Tag>;
-    } else if (status === 'inactive') {
-      return <Tag color="orange">未激活</Tag>;
-    } else {
-      return <Tag color="red">已锁定</Tag>;
+    switch (status) {
+      case 'active':
+        return <Tag color="green">活跃</Tag>;
+      case 'inactive':
+        return <Tag color="orange">非活跃</Tag>;
+      case 'locked':
+        return <Tag color="red">已锁定</Tag>;
+      default:
+        return <Tag>{status}</Tag>;
     }
   };
-
-  const getTaskStatusTag = (status: string) => {
-    if (status === 'active') {
-      return <Tag color="green">运行中</Tag>;
-    } else if (status === 'paused') {
-      return <Tag color="orange">已暂停</Tag>;
-    } else if (status === 'error') {
-      return <Tag color="red">错误</Tag>;
-    } else {
-      return <Tag color="blue">已完成</Tag>;
+  
+  const getRoleTag = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return <Tag color="blue">管理员</Tag>;
+      case 'user':
+        return <Tag color="green">普通用户</Tag>;
+      default:
+        return <Tag>{role}</Tag>;
     }
   };
-
+  
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+  
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '100px 0' }}>
+        <Spin size="large" tip="加载中..." />
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return (
+      <Card>
+        <Empty
+          description="未找到用户信息"
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+        />
+        <div style={{ textAlign: 'center', marginTop: '20px' }}>
+          <Button type="primary" onClick={() => navigate('/admin/users')}>
+            返回用户列表
+          </Button>
+        </div>
+      </Card>
+    );
+  }
+  
   const taskColumns = [
     {
       title: 'ID',
@@ -258,15 +246,52 @@ const UserDetail: React.FC = () => {
       title: '任务名称',
       dataIndex: 'name',
       key: 'name',
-      render: (text: string, record: any) => (
-        <a href={`/tasks/${record.id}`}>{text}</a>
+      render: (text: string, record: Task) => (
+        <a onClick={() => navigate(`/admin/tasks/${record.id}`)}>{text}</a>
       )
+    },
+    {
+      title: '源路径',
+      dataIndex: 'source_path',
+      key: 'source_path',
+      ellipsis: true
+    },
+    {
+      title: '目标路径',
+      dataIndex: 'target_path',
+      key: 'target_path',
+      ellipsis: true
+    },
+    {
+      title: '计划',
+      dataIndex: 'schedule',
+      key: 'schedule'
     },
     {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      render: (status: string) => getTaskStatusTag(status)
+      render: (status: string) => {
+        let color = 'green';
+        let text = '运行中';
+        
+        if (status === 'paused') {
+          color = 'orange';
+          text = '已暂停';
+        } else if (status === 'error') {
+          color = 'red';
+          text = '错误';
+        } else if (status === 'completed') {
+          color = 'blue';
+          text = '已完成';
+        }
+        
+        return (
+          <Tag color={color}>
+            {text}
+          </Tag>
+        );
+      }
     },
     {
       title: '最后同步',
@@ -276,286 +301,145 @@ const UserDetail: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      render: (record: any) => (
+      render: (_: any, record: Task) => (
         <Button 
-          size="small" 
-          type="primary"
-          onClick={() => window.location.href = `/tasks/${record.id}`}
+          size="small"
+          icon={<EyeOutlined />}
+          onClick={() => navigate(`/admin/tasks/${record.id}`)}
         >
           查看
         </Button>
       )
     }
   ];
-
-  const logColumns = [
-    {
-      title: '时间',
-      dataIndex: 'time',
-      key: 'time'
-    },
-    {
-      title: '操作',
-      dataIndex: 'action',
-      key: 'action'
-    },
-    {
-      title: 'IP地址',
-      dataIndex: 'ip',
-      key: 'ip'
-    },
-    {
-      title: '详情',
-      dataIndex: 'details',
-      key: 'details'
-    }
-  ];
-
-  const items: TabsProps['items'] = [
-    {
-      key: '1',
-      label: (
-        <span>
-          <FileOutlined />
-          同步任务
-        </span>
-      ),
-      children: user?.tasks && user.tasks.length > 0 ? (
-        <Table
-          columns={taskColumns}
-          dataSource={user.tasks}
-          rowKey="id"
-          pagination={false}
-        />
-      ) : (
-        <Empty description="暂无同步任务" />
-      ),
-    },
-    {
-      key: '2',
-      label: (
-        <span>
-          <HistoryOutlined />
-          操作日志
-        </span>
-      ),
-      children: user?.logs && user.logs.length > 0 ? (
-        <Table
-          columns={logColumns}
-          dataSource={user.logs}
-          rowKey="id"
-          pagination={{ pageSize: 10 }}
-        />
-      ) : (
-        <Empty description="暂无操作日志" />
-      ),
-    },
-  ];
-
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '100px 0' }}>
-        <Spin size="large" tip="加载中..." />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <Card>
-        <Empty
-          description="未找到用户信息"
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-        />
-        <div style={{ textAlign: 'center', marginTop: '20px' }}>
-          <Button 
-            type="primary" 
-            onClick={() => navigate('/admin/users')}
-          >
-            返回用户列表
-          </Button>
-        </div>
-      </Card>
-    );
-  }
-
+  
   return (
     <div style={{ padding: '24px 0' }}>
       <Card>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <Title level={3}>用户详情</Title>
+          <Title level={3}>
+            <UserOutlined /> {user.username}
+          </Title>
           <Space>
             <Button 
               icon={<EditOutlined />} 
-              onClick={handleEditUser}
+              onClick={() => navigate(`/admin/users/${id}/edit`)}
             >
               编辑用户
             </Button>
-            <Button 
-              icon={<KeyOutlined />} 
-              onClick={handleResetPassword}
+            {user.status === 'locked' ? (
+              <Button 
+                icon={<UnlockOutlined />} 
+                onClick={() => handleLockUser(false)}
+              >
+                解锁用户
+              </Button>
+            ) : (
+              <Button 
+                danger
+                icon={<LockOutlined />} 
+                onClick={() => handleLockUser(true)}
+              >
+                锁定用户
+              </Button>
+            )}
+            <Popconfirm
+              title="确定要删除此用户吗?"
+              description="删除后将无法恢复，用户的所有数据将被清除。"
+              onConfirm={handleDeleteUser}
+              okText="是"
+              cancelText="否"
             >
-              重置密码
-            </Button>
-            <Button 
-              danger 
-              icon={<DeleteOutlined />} 
-              onClick={handleDeleteUser}
-            >
-              删除用户
-            </Button>
-            <Button 
-              type="primary" 
-              onClick={() => navigate('/admin/users')}
-            >
-              返回列表
-            </Button>
+              <Button danger icon={<DeleteOutlined />}>
+                删除用户
+              </Button>
+            </Popconfirm>
           </Space>
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
-          <Avatar 
-            size={64} 
-            icon={<UserOutlined />} 
-            style={{ marginRight: '20px' }}
-          />
-          <div>
-            <Title level={4} style={{ marginBottom: '5px' }}>{user.username}</Title>
-            <Space>
-              <Tag color={user.role === 'admin' ? 'purple' : 'blue'}>
-                {user.role === 'admin' ? '管理员' : '普通用户'}
-              </Tag>
-              {getStatusTag(user.status)}
-            </Space>
-          </div>
-        </div>
-        
-        <Divider />
-        
-        <Descriptions title="基本信息" bordered column={{ xxl: 4, xl: 3, lg: 3, md: 3, sm: 2, xs: 1 }}>
-          <Descriptions.Item label="用户ID">{user.id}</Descriptions.Item>
-          <Descriptions.Item label="邮箱">
-            <MailOutlined /> {user.email}
-          </Descriptions.Item>
-          <Descriptions.Item label="电话号码">
-            {user.phone || '未设置'}
-          </Descriptions.Item>
-          <Descriptions.Item label="注册时间">{user.created_at}</Descriptions.Item>
-          <Descriptions.Item label="最后登录">{user.last_login}</Descriptions.Item>
+        <Descriptions title="用户信息" bordered column={{ xs: 1, sm: 2, md: 3 }}>
+          <Descriptions.Item label="ID">{user.id}</Descriptions.Item>
           <Descriptions.Item label="状态">{getStatusTag(user.status)}</Descriptions.Item>
+          <Descriptions.Item label="角色">{getRoleTag(user.role)}</Descriptions.Item>
+          <Descriptions.Item label="邮箱">
+            <Space>
+              <MailOutlined />
+              {user.email}
+            </Space>
+          </Descriptions.Item>
+          <Descriptions.Item label="注册时间">
+            <Space>
+              <ClockCircleOutlined />
+              {user.created_at}
+            </Space>
+          </Descriptions.Item>
+          <Descriptions.Item label="最后登录">
+            <Space>
+              <ClockCircleOutlined />
+              {user.last_login}
+            </Space>
+          </Descriptions.Item>
+          <Descriptions.Item label="登录次数">{user.login_count}</Descriptions.Item>
+          <Descriptions.Item label="任务数">{user.tasks_count}</Descriptions.Item>
+          <Descriptions.Item label="存储使用">
+            <Space>
+              <CloudSyncOutlined />
+              {formatBytes(user.storage_used)}
+            </Space>
+          </Descriptions.Item>
         </Descriptions>
         
         <Divider />
         
-        <Tabs defaultActiveKey="1" items={items} />
+        <Tabs defaultActiveKey="tasks">
+          <TabPane tab="用户任务" key="tasks">
+            {tasks.length > 0 ? (
+              <Table
+                columns={taskColumns}
+                dataSource={tasks}
+                rowKey="id"
+                pagination={false}
+              />
+            ) : (
+              <Empty description="该用户暂无任务" />
+            )}
+          </TabPane>
+          
+          <TabPane tab="登录记录" key="loginLogs">
+            {loginLogs.length > 0 ? (
+              <List
+                itemLayout="horizontal"
+                dataSource={loginLogs}
+                renderItem={log => (
+                  <List.Item>
+                    <List.Item.Meta
+                      avatar={
+                        <Avatar 
+                          icon={<UserOutlined />} 
+                          style={{ backgroundColor: log.success ? '#52c41a' : '#f5222d' }} 
+                        />
+                      }
+                      title={
+                        <Space>
+                          <Text>{log.time}</Text>
+                          {log.success ? (
+                            <Tag color="success">成功</Tag>
+                          ) : (
+                            <Tag color="error">失败</Tag>
+                          )}
+                        </Space>
+                      }
+                      description={`IP地址: ${log.ip} | 设备: ${log.device}`}
+                    />
+                  </List.Item>
+                )}
+              />
+            ) : (
+              <Empty description="暂无登录记录" />
+            )}
+          </TabPane>
+        </Tabs>
       </Card>
-      
-      <Modal
-        title="编辑用户"
-        open={editModalVisible}
-        onOk={handleEditModalOk}
-        onCancel={() => setEditModalVisible(false)}
-        okText="保存"
-        cancelText="取消"
-      >
-        <Form
-          form={form}
-          layout="vertical"
-        >
-          <Form.Item
-            name="username"
-            label="用户名"
-            rules={[{ required: true, message: '请输入用户名' }]}
-          >
-            <Input prefix={<UserOutlined />} placeholder="请输入用户名" />
-          </Form.Item>
-          
-          <Form.Item
-            name="email"
-            label="邮箱"
-            rules={[
-              { required: true, message: '请输入邮箱' },
-              { type: 'email', message: '请输入有效的邮箱地址' }
-            ]}
-          >
-            <Input prefix={<MailOutlined />} placeholder="请输入邮箱" />
-          </Form.Item>
-          
-          <Form.Item
-            name="phone"
-            label="电话号码"
-          >
-            <Input placeholder="请输入电话号码" />
-          </Form.Item>
-          
-          <Form.Item
-            name="role"
-            label="角色"
-            rules={[{ required: true, message: '请选择角色' }]}
-          >
-            <Select placeholder="请选择角色">
-              <Option value="admin">管理员</Option>
-              <Option value="user">普通用户</Option>
-            </Select>
-          </Form.Item>
-          
-          <Form.Item
-            name="status"
-            label="状态"
-            rules={[{ required: true, message: '请选择状态' }]}
-          >
-            <Select placeholder="请选择状态">
-              <Option value="active">活跃</Option>
-              <Option value="inactive">未激活</Option>
-              <Option value="locked">已锁定</Option>
-            </Select>
-          </Form.Item>
-        </Form>
-      </Modal>
-      
-      <Modal
-        title="重置密码"
-        open={resetPasswordVisible}
-        onOk={handleResetPasswordOk}
-        onCancel={() => setResetPasswordVisible(false)}
-        okText="重置"
-        cancelText="取消"
-      >
-        <Form
-          form={passwordForm}
-          layout="vertical"
-        >
-          <Form.Item
-            name="password"
-            label="新密码"
-            rules={[
-              { required: true, message: '请输入新密码' },
-              { min: 6, message: '密码长度不能小于6位' }
-            ]}
-          >
-            <Input.Password prefix={<LockOutlined />} placeholder="请输入新密码" />
-          </Form.Item>
-          
-          <Form.Item
-            name="confirmPassword"
-            label="确认密码"
-            dependencies={['password']}
-            rules={[
-              { required: true, message: '请确认新密码' },
-              ({ getFieldValue }) => ({
-                validator(_, value) {
-                  if (!value || getFieldValue('password') === value) {
-                    return Promise.resolve();
-                  }
-                  return Promise.reject(new Error('两次输入的密码不一致'));
-                },
-              }),
-            ]}
-          >
-            <Input.Password prefix={<LockOutlined />} placeholder="请确认新密码" />
-          </Form.Item>
-        </Form>
-      </Modal>
     </div>
   );
 };

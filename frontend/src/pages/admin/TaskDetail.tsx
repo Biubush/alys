@@ -17,7 +17,10 @@ import {
   Alert,
   Tabs,
   Table,
-  Modal,
+  Drawer,
+  Form,
+  Input,
+  Select,
   message
 } from 'antd';
 import {
@@ -32,17 +35,22 @@ import {
   FileOutlined,
   FolderOutlined,
   UserOutlined,
-  RollbackOutlined,
-  HistoryOutlined,
-  InfoCircleOutlined
+  EyeOutlined
 } from '@ant-design/icons';
-import type { TabsProps } from 'antd';
+import { Link } from 'react-router-dom';
 
 const { Title, Text } = Typography;
+const { TabPane } = Tabs;
+const { TextArea } = Input;
+const { Option } = Select;
 
 interface Task {
   id: number;
   name: string;
+  user: {
+    id: number;
+    username: string;
+  };
   source_path: string;
   target_path: string;
   schedule: string;
@@ -54,11 +62,6 @@ interface Task {
   sync_count?: number;
   sync_size?: number;
   error_count?: number;
-  user_id: number;
-  user_name: string;
-  next_run?: string;
-  ignore_patterns?: string;
-  sync_delete?: boolean;
 }
 
 interface SyncLog {
@@ -68,20 +71,24 @@ interface SyncLog {
   message: string;
 }
 
-interface SyncFile {
+interface FileItem {
   id: number;
   name: string;
   path: string;
   size: number;
-  status: 'synced' | 'pending' | 'error';
-  last_sync: string;
-  error_message?: string;
+  type: string;
+  sync_status: 'synced' | 'pending' | 'error';
+  last_modified: string;
 }
 
 // 模拟任务数据
 const mockTask: Task = {
   id: 1,
   name: '文档同步',
+  user: {
+    id: 1,
+    username: '张三'
+  },
   source_path: '/文档',
   target_path: '/本地备份/文档',
   schedule: '每天',
@@ -92,12 +99,7 @@ const mockTask: Task = {
   file_count: 256,
   sync_count: 10,
   sync_size: 1024 * 1024 * 50, // 50MB
-  error_count: 2,
-  user_id: 2,
-  user_name: 'user1',
-  next_run: '2023-03-23 14:30:00',
-  ignore_patterns: '*.tmp\n.DS_Store',
-  sync_delete: true
+  error_count: 2
 };
 
 // 模拟同步日志
@@ -134,59 +136,55 @@ const mockSyncLogs: SyncLog[] = [
   }
 ];
 
-// 模拟同步文件列表
-const mockSyncFiles: SyncFile[] = [
+// 模拟文件列表
+const mockFiles: FileItem[] = [
   {
     id: 1,
     name: '工作报告.docx',
     path: '/文档/工作报告.docx',
-    size: 2.5 * 1024 * 1024, // 2.5MB
-    status: 'synced',
-    last_sync: '2023-03-22 14:30:00'
+    size: 1024 * 1024 * 2, // 2MB
+    type: 'document',
+    sync_status: 'synced',
+    last_modified: '2023-03-22 10:30:00'
   },
   {
     id: 2,
-    name: '项目计划.xlsx',
-    path: '/文档/项目计划.xlsx',
-    size: 1.8 * 1024 * 1024, // 1.8MB
-    status: 'synced',
-    last_sync: '2023-03-22 14:29:45'
+    name: '会议记录.pdf',
+    path: '/文档/会议记录.pdf',
+    size: 1024 * 1024 * 5, // 5MB
+    type: 'document',
+    sync_status: 'synced',
+    last_modified: '2023-03-21 16:45:00'
   },
   {
     id: 3,
-    name: '会议记录.docx',
-    path: '/文档/会议记录.docx',
-    size: 1.2 * 1024 * 1024, // 1.2MB
-    status: 'synced',
-    last_sync: '2023-03-22 14:29:30'
+    name: '项目计划.xlsx',
+    path: '/文档/项目计划.xlsx',
+    size: 1024 * 512, // 512KB
+    type: 'document',
+    sync_status: 'pending',
+    last_modified: '2023-03-22 09:15:00'
   },
   {
     id: 4,
-    name: '报告.docx',
-    path: '/文档/财务/报告.docx',
-    size: 3.1 * 1024 * 1024, // 3.1MB
-    status: 'error',
-    last_sync: '2023-03-22 14:29:30',
-    error_message: '权限不足'
-  },
-  {
-    id: 5,
-    name: '图片.jpg',
-    path: '/文档/图片.jpg',
-    size: 4.7 * 1024 * 1024, // 4.7MB
-    status: 'synced',
-    last_sync: '2023-03-22 14:29:00'
+    name: '错误文件.txt',
+    path: '/文档/错误文件.txt',
+    size: 1024 * 10, // 10KB
+    type: 'document',
+    sync_status: 'error',
+    last_modified: '2023-03-22 11:30:00'
   }
 ];
 
-const TaskDetail: React.FC = () => {
+const AdminTaskDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [task, setTask] = useState<Task | null>(null);
   const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
-  const [syncFiles, setSyncFiles] = useState<SyncFile[]>([]);
-  const [activeTabKey, setActiveTabKey] = useState('1');
+  const [files, setFiles] = useState<FileItem[]>([]);
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [form] = Form.useForm();
 
   useEffect(() => {
     fetchTaskDetails();
@@ -201,10 +199,18 @@ const TaskDetail: React.FC = () => {
       // 实际项目中应该从API获取数据
       setTask(mockTask);
       setSyncLogs(mockSyncLogs);
-      setSyncFiles(mockSyncFiles);
+      setFiles(mockFiles);
+      
+      // 设置表单初始值
+      form.setFieldsValue({
+        name: mockTask.name,
+        source_path: mockTask.source_path,
+        target_path: mockTask.target_path,
+        status: mockTask.status,
+        description: mockTask.description
+      });
     } catch (error) {
       console.error('获取任务详情失败:', error);
-      message.error('获取任务详情失败');
     } finally {
       setLoading(false);
     }
@@ -216,11 +222,10 @@ const TaskDetail: React.FC = () => {
     try {
       // 模拟API调用
       await new Promise(resolve => setTimeout(resolve, 500));
-      setTask({ ...task, status: 'active' });
       message.success('任务已启动');
+      setTask({ ...task, status: 'active' });
     } catch (error) {
-      console.error('运行任务失败:', error);
-      message.error('运行任务失败');
+      message.error('启动任务失败');
     }
   };
 
@@ -230,33 +235,52 @@ const TaskDetail: React.FC = () => {
     try {
       // 模拟API调用
       await new Promise(resolve => setTimeout(resolve, 500));
-      setTask({ ...task, status: 'paused' });
       message.success('任务已暂停');
+      setTask({ ...task, status: 'paused' });
     } catch (error) {
-      console.error('暂停任务失败:', error);
       message.error('暂停任务失败');
     }
   };
 
-  const handleDeleteTask = () => {
-    Modal.confirm({
-      title: '删除任务',
-      content: '确定要删除此任务吗？此操作不可撤销。',
-      okText: '删除',
-      okType: 'danger',
-      cancelText: '取消',
-      onOk: async () => {
-        try {
-          // 模拟API调用
-          await new Promise(resolve => setTimeout(resolve, 500));
-          message.success('任务删除成功');
-          navigate('/admin/tasks');
-        } catch (error) {
-          console.error('删除任务失败:', error);
-          message.error('删除任务失败');
-        }
+  const handleDeleteTask = async () => {
+    try {
+      // 模拟API调用
+      await new Promise(resolve => setTimeout(resolve, 500));
+      message.success('任务删除成功');
+      navigate('/admin/tasks');
+    } catch (error) {
+      message.error('删除任务失败');
+    }
+  };
+
+  const showEditDrawer = () => {
+    setDrawerVisible(true);
+  };
+
+  const handleDrawerClose = () => {
+    setDrawerVisible(false);
+  };
+
+  const handleFormSubmit = async () => {
+    try {
+      const values = await form.validateFields();
+      
+      // 模拟API调用
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      message.success('任务更新成功');
+      setDrawerVisible(false);
+      
+      // 更新本地任务数据
+      if (task) {
+        setTask({
+          ...task,
+          ...values
+        });
       }
-    });
+    } catch (error) {
+      console.error('提交表单失败:', error);
+    }
   };
 
   const getStatusTag = (status: string) => {
@@ -285,16 +309,6 @@ const TaskDetail: React.FC = () => {
     );
   };
 
-  const getFileStatusTag = (status: string) => {
-    if (status === 'synced') {
-      return <Tag color="green" icon={<CheckCircleOutlined />}>已同步</Tag>;
-    } else if (status === 'pending') {
-      return <Tag color="blue" icon={<ClockCircleOutlined />}>等待同步</Tag>;
-    } else {
-      return <Tag color="red" icon={<WarningOutlined />}>错误</Tag>;
-    }
-  };
-
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     
@@ -303,6 +317,17 @@ const TaskDetail: React.FC = () => {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const getFileSyncStatusTag = (status: string) => {
+    if (status === 'synced') {
+      return <Tag color="success" icon={<CheckCircleOutlined />}>已同步</Tag>;
+    } else if (status === 'pending') {
+      return <Tag color="processing" icon={<SyncOutlined spin />}>等待中</Tag>;
+    } else if (status === 'error') {
+      return <Tag color="error" icon={<WarningOutlined />}>错误</Tag>;
+    }
+    return <Tag>{status}</Tag>;
   };
 
   const fileColumns = [
@@ -324,83 +349,21 @@ const TaskDetail: React.FC = () => {
       render: (size: number) => formatBytes(size)
     },
     {
-      title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: string) => getFileStatusTag(status)
+      title: '类型',
+      dataIndex: 'type',
+      key: 'type'
     },
     {
-      title: '最后同步',
-      dataIndex: 'last_sync',
-      key: 'last_sync'
+      title: '同步状态',
+      dataIndex: 'sync_status',
+      key: 'sync_status',
+      render: (status: string) => getFileSyncStatusTag(status)
     },
     {
-      title: '错误信息',
-      dataIndex: 'error_message',
-      key: 'error_message',
-      render: (text: string) => text || '-'
+      title: '最后修改',
+      dataIndex: 'last_modified',
+      key: 'last_modified'
     }
-  ];
-
-  const items: TabsProps['items'] = [
-    {
-      key: '1',
-      label: (
-        <span>
-          <HistoryOutlined />
-          同步日志
-        </span>
-      ),
-      children: syncLogs.length > 0 ? (
-        <Timeline>
-          {syncLogs.map(log => {
-            let color = 'blue';
-            let icon = null;
-            
-            if (log.type === 'success') {
-              color = 'green';
-              icon = <CheckCircleOutlined />;
-            } else if (log.type === 'error') {
-              color = 'red';
-              icon = <WarningOutlined />;
-            } else if (log.type === 'warning') {
-              color = 'orange';
-              icon = <WarningOutlined />;
-            } else if (log.type === 'info') {
-              icon = <InfoCircleOutlined />;
-            }
-            
-            return (
-              <Timeline.Item key={log.id} color={color} dot={icon}>
-                <p><Text type="secondary">{log.time}</Text></p>
-                <p>{log.message}</p>
-              </Timeline.Item>
-            );
-          })}
-        </Timeline>
-      ) : (
-        <Empty description="暂无同步日志" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-      ),
-    },
-    {
-      key: '2',
-      label: (
-        <span>
-          <FileOutlined />
-          同步文件
-        </span>
-      ),
-      children: syncFiles.length > 0 ? (
-        <Table
-          columns={fileColumns}
-          dataSource={syncFiles}
-          rowKey="id"
-          pagination={false}
-        />
-      ) : (
-        <Empty description="暂无同步文件" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-      ),
-    },
   ];
 
   if (loading) {
@@ -445,23 +408,22 @@ const TaskDetail: React.FC = () => {
                 type="primary" 
                 icon={<PlayCircleOutlined />} 
                 onClick={handleRunTask}
-                disabled={task.status === 'completed'}
               >
                 运行任务
               </Button>
             )}
+            <Button 
+              icon={<EditOutlined />} 
+              onClick={showEditDrawer}
+            >
+              编辑任务
+            </Button>
             <Button 
               danger 
               icon={<DeleteOutlined />}
               onClick={handleDeleteTask}
             >
               删除任务
-            </Button>
-            <Button 
-              icon={<RollbackOutlined />}
-              onClick={() => navigate('/admin/tasks')}
-            >
-              返回列表
             </Button>
           </Space>
         </div>
@@ -478,33 +440,41 @@ const TaskDetail: React.FC = () => {
 
         <Row gutter={[24, 24]}>
           <Col xs={24} sm={12} lg={6}>
-            <Statistic 
-              title="文件数量" 
-              value={task.file_count || 0} 
-              prefix={<FileOutlined />} 
-            />
+            <Card>
+              <Statistic 
+                title="文件数量" 
+                value={task.file_count || 0} 
+                prefix={<FileOutlined />} 
+              />
+            </Card>
           </Col>
           <Col xs={24} sm={12} lg={6}>
-            <Statistic 
-              title="已同步" 
-              value={task.sync_count || 0} 
-              prefix={<SyncOutlined />} 
-            />
+            <Card>
+              <Statistic 
+                title="已同步" 
+                value={task.sync_count || 0} 
+                prefix={<SyncOutlined />} 
+              />
+            </Card>
           </Col>
           <Col xs={24} sm={12} lg={6}>
-            <Statistic 
-              title="同步大小" 
-              value={formatBytes(task.sync_size || 0)}
-              prefix={<FolderOutlined />} 
-            />
+            <Card>
+              <Statistic 
+                title="同步大小" 
+                value={formatBytes(task.sync_size || 0)}
+                prefix={<FolderOutlined />} 
+              />
+            </Card>
           </Col>
           <Col xs={24} sm={12} lg={6}>
-            <Statistic 
-              title="错误数" 
-              value={task.error_count || 0}
-              valueStyle={{ color: task.error_count ? '#cf1322' : '#3f8600' }}
-              prefix={<WarningOutlined />} 
-            />
+            <Card>
+              <Statistic 
+                title="错误数" 
+                value={task.error_count || 0}
+                valueStyle={{ color: task.error_count ? '#cf1322' : '#3f8600' }}
+                prefix={<WarningOutlined />} 
+              />
+            </Card>
           </Col>
         </Row>
 
@@ -512,20 +482,17 @@ const TaskDetail: React.FC = () => {
 
         <Descriptions title="任务信息" bordered column={{ xs: 1, sm: 2, md: 3 }}>
           <Descriptions.Item label="ID">{task.id}</Descriptions.Item>
-          <Descriptions.Item label="用户">
-            <a href={`/admin/users/${task.user_id}`}>
-              <UserOutlined /> {task.user_name}
-            </a>
-          </Descriptions.Item>
           <Descriptions.Item label="状态">{getStatusTag(task.status)}</Descriptions.Item>
           <Descriptions.Item label="创建时间">{task.created_at}</Descriptions.Item>
           <Descriptions.Item label="最后同步">{task.last_sync}</Descriptions.Item>
-          <Descriptions.Item label="下次同步">{task.next_run || '-'}</Descriptions.Item>
-          <Descriptions.Item label="计划" span={2}>{task.schedule}</Descriptions.Item>
-          <Descriptions.Item label="同步删除">
-            <Tag color={task.sync_delete ? 'green' : 'orange'}>
-              {task.sync_delete ? '是' : '否'}
-            </Tag>
+          <Descriptions.Item label="计划">{task.schedule}</Descriptions.Item>
+          <Descriptions.Item label="用户">
+            <Link to={`/admin/users/${task.user.id}`}>
+              <Space>
+                <UserOutlined />
+                {task.user.username}
+              </Space>
+            </Link>
           </Descriptions.Item>
           <Descriptions.Item label="源路径" span={3}>
             <Text code>{task.source_path}</Text>
@@ -533,28 +500,124 @@ const TaskDetail: React.FC = () => {
           <Descriptions.Item label="目标路径" span={3}>
             <Text code>{task.target_path}</Text>
           </Descriptions.Item>
-          {task.description && (
-            <Descriptions.Item label="描述" span={3}>
-              {task.description}
-            </Descriptions.Item>
-          )}
-          {task.ignore_patterns && (
-            <Descriptions.Item label="忽略模式" span={3}>
-              <pre style={{ margin: 0 }}>{task.ignore_patterns}</pre>
-            </Descriptions.Item>
-          )}
+          <Descriptions.Item label="描述" span={3}>
+            {task.description || '无描述'}
+          </Descriptions.Item>
         </Descriptions>
 
         <Divider />
 
-        <Tabs 
-          activeKey={activeTabKey} 
-          onChange={setActiveTabKey}
-          items={items}
-        />
+        <Tabs defaultActiveKey="logs">
+          <TabPane tab="同步日志" key="logs">
+            {syncLogs.length > 0 ? (
+              <Timeline>
+                {syncLogs.map(log => {
+                  let color = 'blue';
+                  let icon = null;
+                  
+                  if (log.type === 'success') {
+                    color = 'green';
+                    icon = <CheckCircleOutlined />;
+                  } else if (log.type === 'error') {
+                    color = 'red';
+                    icon = <WarningOutlined />;
+                  } else if (log.type === 'warning') {
+                    color = 'orange';
+                    icon = <WarningOutlined />;
+                  } else if (log.type === 'info') {
+                    icon = <ClockCircleOutlined />;
+                  }
+                  
+                  return (
+                    <Timeline.Item key={log.id} color={color} dot={icon}>
+                      <p><Text type="secondary">{log.time}</Text></p>
+                      <p>{log.message}</p>
+                    </Timeline.Item>
+                  );
+                })}
+              </Timeline>
+            ) : (
+              <Empty description="暂无同步日志" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            )}
+          </TabPane>
+          
+          <TabPane tab="文件列表" key="files">
+            <Table 
+              columns={fileColumns} 
+              dataSource={files} 
+              rowKey="id"
+              pagination={{ pageSize: 10 }}
+            />
+          </TabPane>
+        </Tabs>
       </Card>
+
+      {/* 编辑任务抽屉 */}
+      <Drawer
+        title="编辑任务"
+        width={500}
+        onClose={handleDrawerClose}
+        open={drawerVisible}
+        extra={
+          <Space>
+            <Button onClick={handleDrawerClose}>取消</Button>
+            <Button type="primary" onClick={handleFormSubmit}>
+              保存
+            </Button>
+          </Space>
+        }
+      >
+        <Form
+          form={form}
+          layout="vertical"
+        >
+          <Form.Item
+            name="name"
+            label="任务名称"
+            rules={[{ required: true, message: '请输入任务名称' }]}
+          >
+            <Input placeholder="请输入任务名称" />
+          </Form.Item>
+          
+          <Form.Item
+            name="source_path"
+            label="源路径 (阿里云盘)"
+            rules={[{ required: true, message: '请输入源路径' }]}
+          >
+            <Input placeholder="/照片" prefix={<FolderOutlined />} />
+          </Form.Item>
+          
+          <Form.Item
+            name="target_path"
+            label="目标路径 (本地/远程)"
+            rules={[{ required: true, message: '请输入目标路径' }]}
+          >
+            <Input placeholder="/备份/照片" prefix={<FolderOutlined />} />
+          </Form.Item>
+          
+          <Form.Item
+            name="status"
+            label="状态"
+            rules={[{ required: true, message: '请选择状态' }]}
+          >
+            <Select placeholder="请选择状态">
+              <Option value="active">运行中</Option>
+              <Option value="paused">已暂停</Option>
+              <Option value="error">错误</Option>
+              <Option value="completed">已完成</Option>
+            </Select>
+          </Form.Item>
+          
+          <Form.Item
+            name="description"
+            label="任务描述"
+          >
+            <TextArea rows={4} placeholder="请输入任务描述（可选）" />
+          </Form.Item>
+        </Form>
+      </Drawer>
     </div>
   );
 };
 
-export default TaskDetail; 
+export default AdminTaskDetail;

@@ -1,17 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Table, Button, Input, Space, Tag, Popconfirm, Typography, message, Modal, Form, Select } from 'antd';
 import { 
-  SearchOutlined, 
+  Card, 
+  Table, 
+  Button, 
+  Tag, 
+  Space, 
+  Typography, 
+  Input, 
+  Select, 
+  DatePicker, 
+  Popconfirm, 
+  message,
+  Modal,
+  Form
+} from 'antd';
+import { 
   PlusOutlined, 
-  EditOutlined, 
+  SearchOutlined, 
   DeleteOutlined, 
+  EditOutlined, 
+  EyeOutlined, 
   LockOutlined,
-  UnlockOutlined,
-  UserOutlined
+  UnlockOutlined
 } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
+import type { TablePaginationConfig } from 'antd/es/table';
+import type { FilterValue, SorterResult } from 'antd/es/table/interface';
 
 const { Title } = Typography;
+const { RangePicker } = DatePicker;
 const { Option } = Select;
 
 interface User {
@@ -22,94 +39,124 @@ interface User {
   status: 'active' | 'inactive' | 'locked';
   created_at: string;
   last_login: string;
+  tasks_count: number;
 }
 
 // 模拟用户数据
 const mockUsers: User[] = [
   {
     id: 1,
-    username: 'admin',
-    email: 'admin@example.com',
+    username: '张三',
+    email: 'zhangsan@example.com',
     role: 'admin',
     status: 'active',
-    created_at: '2023-01-15 10:00:00',
-    last_login: '2023-03-23 08:30:15'
+    created_at: '2023-02-15',
+    last_login: '2023-03-21 15:30',
+    tasks_count: 5
   },
   {
     id: 2,
-    username: 'user1',
-    email: 'user1@example.com',
+    username: '李四',
+    email: 'lisi@example.com',
     role: 'user',
     status: 'active',
-    created_at: '2023-02-05 14:22:10',
-    last_login: '2023-03-22 16:45:32'
+    created_at: '2023-02-20',
+    last_login: '2023-03-21 12:45',
+    tasks_count: 3
   },
   {
     id: 3,
-    username: 'user2',
-    email: 'user2@example.com',
+    username: '王五',
+    email: 'wangwu@example.com',
     role: 'user',
     status: 'inactive',
-    created_at: '2023-02-10 09:15:30',
-    last_login: '2023-03-10 11:20:45'
+    created_at: '2023-03-01',
+    last_login: '2023-03-20 18:30',
+    tasks_count: 0
   },
   {
     id: 4,
-    username: 'user3',
-    email: 'user3@example.com',
+    username: '赵六',
+    email: 'zhaoliu@example.com',
     role: 'user',
     status: 'locked',
-    created_at: '2023-02-15 16:40:22',
-    last_login: '2023-02-28 13:10:05'
-  }
+    created_at: '2023-03-05',
+    last_login: '2023-03-19 09:15',
+    tasks_count: 2
+  },
 ];
 
 const UserManagement: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [users, setUsers] = useState<User[]>([]);
-  const [searchText, setSearchText] = useState('');
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [data, setData] = useState<User[]>([]);
+  const [pagination, setPagination] = useState<TablePaginationConfig>({
+    current: 1,
+    pageSize: 10,
+    total: 0
+  });
+  const [filters, setFilters] = useState({
+    username: '',
+    email: '',
+    role: '',
+    status: ''
+  });
+  const [isModalVisible, setIsModalVisible] = useState(false);
   const [form] = Form.useForm();
+  const [editingUser, setEditingUser] = useState<User | null>(null);
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [pagination.current, pagination.pageSize, filters]);
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
       // 模拟API调用
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // 过滤用户数据（模拟搜索功能）
-      let filteredUsers = [...mockUsers];
-      if (searchText) {
-        filteredUsers = mockUsers.filter(
-          user => 
-            user.username.toLowerCase().includes(searchText.toLowerCase()) ||
-            user.email.toLowerCase().includes(searchText.toLowerCase())
-        );
-      }
-      
-      setUsers(filteredUsers);
+      // 在实际应用中，这里应该是调用后端API获取用户数据
+      // 此处使用模拟数据
+      setData(mockUsers);
+      setPagination({
+        ...pagination,
+        total: mockUsers.length
+      });
     } catch (error) {
-      console.error('获取用户列表失败:', error);
-      message.error('获取用户列表失败');
+      console.error('获取用户失败:', error);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleTableChange = (
+    pagination: TablePaginationConfig,
+    filters: Record<string, FilterValue | null>,
+    sorter: SorterResult<User> | SorterResult<User>[]
+  ) => {
+    setPagination(pagination);
+  };
+
   const handleSearch = () => {
+    setPagination({ ...pagination, current: 1 });
+    fetchUsers();
+  };
+
+  const handleReset = () => {
+    setFilters({
+      username: '',
+      email: '',
+      role: '',
+      status: ''
+    });
+    setPagination({ ...pagination, current: 1 });
     fetchUsers();
   };
 
   const handleAddUser = () => {
     setEditingUser(null);
     form.resetFields();
-    setModalVisible(true);
+    setIsModalVisible(true);
   };
 
   const handleEditUser = (user: User) => {
@@ -120,57 +167,82 @@ const UserManagement: React.FC = () => {
       role: user.role,
       status: user.status
     });
-    setModalVisible(true);
+    setIsModalVisible(true);
   };
 
-  const handleDeleteUser = async (userId: number) => {
+  const handleDeleteUser = async (id: number) => {
     try {
       // 模拟API调用
       await new Promise(resolve => setTimeout(resolve, 500));
-      
       message.success('用户删除成功');
       fetchUsers();
     } catch (error) {
-      console.error('删除用户失败:', error);
-      message.error('删除用户失败');
+      message.error('删除失败，请稍后重试');
     }
   };
 
-  const handleLockUser = async (userId: number, isLocked: boolean) => {
+  const handleLockUser = async (id: number, locked: boolean) => {
     try {
       // 模拟API调用
       await new Promise(resolve => setTimeout(resolve, 500));
-      
-      message.success(isLocked ? '用户已解锁' : '用户已锁定');
+      message.success(locked ? '用户已锁定' : '用户已解锁');
       fetchUsers();
     } catch (error) {
-      console.error('更新用户状态失败:', error);
-      message.error('更新用户状态失败');
+      message.error('操作失败，请稍后重试');
     }
   };
 
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
+      setLoading(true);
       
       // 模拟API调用
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       if (editingUser) {
+        // 编辑用户
         message.success('用户更新成功');
       } else {
+        // 添加用户
         message.success('用户创建成功');
       }
       
-      setModalVisible(false);
+      setIsModalVisible(false);
       fetchUsers();
     } catch (error) {
-      console.error('表单验证失败:', error);
+      console.error('提交表单失败:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleModalCancel = () => {
-    setModalVisible(false);
+    setIsModalVisible(false);
+  };
+
+  const getStatusTag = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <Tag color="green">活跃</Tag>;
+      case 'inactive':
+        return <Tag color="orange">非活跃</Tag>;
+      case 'locked':
+        return <Tag color="red">已锁定</Tag>;
+      default:
+        return <Tag>{status}</Tag>;
+    }
+  };
+
+  const getRoleTag = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return <Tag color="blue">管理员</Tag>;
+      case 'user':
+        return <Tag color="green">用户</Tag>;
+      default:
+        return <Tag>{role}</Tag>;
+    }
   };
 
   const columns = [
@@ -185,9 +257,7 @@ const UserManagement: React.FC = () => {
       dataIndex: 'username',
       key: 'username',
       render: (text: string, record: User) => (
-        <Link to={`/admin/users/${record.id}`}>
-          <UserOutlined /> {text}
-        </Link>
+        <Link to={`/admin/users/${record.id}`}>{text}</Link>
       )
     },
     {
@@ -199,30 +269,16 @@ const UserManagement: React.FC = () => {
       title: '角色',
       dataIndex: 'role',
       key: 'role',
-      render: (role: string) => (
-        role === 'admin' ? (
-          <Tag color="purple">管理员</Tag>
-        ) : (
-          <Tag color="blue">普通用户</Tag>
-        )
-      )
+      render: (role: string) => getRoleTag(role)
     },
     {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      render: (status: string) => {
-        if (status === 'active') {
-          return <Tag color="green">活跃</Tag>;
-        } else if (status === 'inactive') {
-          return <Tag color="orange">未激活</Tag>;
-        } else {
-          return <Tag color="red">已锁定</Tag>;
-        }
-      }
+      render: (status: string) => getStatusTag(status)
     },
     {
-      title: '创建时间',
+      title: '注册时间',
       dataIndex: 'created_at',
       key: 'created_at'
     },
@@ -232,36 +288,47 @@ const UserManagement: React.FC = () => {
       key: 'last_login'
     },
     {
+      title: '任务数',
+      dataIndex: 'tasks_count',
+      key: 'tasks_count'
+    },
+    {
       title: '操作',
       key: 'action',
       render: (_: any, record: User) => (
         <Space size="small">
           <Button 
-            size="small" 
-            icon={<EditOutlined />} 
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => navigate(`/admin/users/${record.id}`)}
+          >
+            查看
+          </Button>
+          <Button 
+            size="small"
+            icon={<EditOutlined />}
             onClick={() => handleEditUser(record)}
           >
             编辑
           </Button>
-          
           {record.status === 'locked' ? (
-            <Button
+            <Button 
               size="small"
               icon={<UnlockOutlined />}
-              onClick={() => handleLockUser(record.id, true)}
+              onClick={() => handleLockUser(record.id, false)}
             >
               解锁
             </Button>
           ) : (
-            <Button
+            <Button 
               size="small"
+              danger
               icon={<LockOutlined />}
-              onClick={() => handleLockUser(record.id, false)}
+              onClick={() => handleLockUser(record.id, true)}
             >
               锁定
             </Button>
           )}
-          
           <Popconfirm
             title="确定要删除此用户吗?"
             onConfirm={() => handleDeleteUser(record.id)}
@@ -269,12 +336,10 @@ const UserManagement: React.FC = () => {
             cancelText="否"
           >
             <Button 
-              size="small" 
-              danger 
+              size="small"
+              danger
               icon={<DeleteOutlined />}
-            >
-              删除
-            </Button>
+            />
           </Popconfirm>
         </Space>
       )
@@ -288,37 +353,79 @@ const UserManagement: React.FC = () => {
           <Title level={3}>用户管理</Title>
           <Button 
             type="primary" 
-            icon={<PlusOutlined />} 
+            icon={<PlusOutlined />}
             onClick={handleAddUser}
           >
             添加用户
           </Button>
         </div>
         
-        <div style={{ marginBottom: '16px' }}>
-          <Input.Search
-            placeholder="搜索用户名或邮箱"
-            allowClear
-            enterButton={<SearchOutlined />}
-            onSearch={handleSearch}
-            value={searchText}
-            onChange={e => setSearchText(e.target.value)}
-            style={{ width: 300 }}
-          />
+        <div style={{ marginBottom: '20px' }}>
+          <Space wrap>
+            <Input
+              placeholder="用户名"
+              value={filters.username}
+              onChange={e => setFilters({ ...filters, username: e.target.value })}
+              style={{ width: 150 }}
+            />
+            <Input
+              placeholder="邮箱"
+              value={filters.email}
+              onChange={e => setFilters({ ...filters, email: e.target.value })}
+              style={{ width: 200 }}
+            />
+            <Select
+              placeholder="角色"
+              value={filters.role || undefined}
+              onChange={value => setFilters({ ...filters, role: value })}
+              allowClear
+              style={{ width: 120 }}
+            >
+              <Option value="admin">管理员</Option>
+              <Option value="user">用户</Option>
+            </Select>
+            <Select
+              placeholder="状态"
+              value={filters.status || undefined}
+              onChange={value => setFilters({ ...filters, status: value })}
+              allowClear
+              style={{ width: 120 }}
+            >
+              <Option value="active">活跃</Option>
+              <Option value="inactive">非活跃</Option>
+              <Option value="locked">锁定</Option>
+            </Select>
+            <RangePicker placeholder={['注册开始', '注册结束']} />
+            <Button 
+              type="primary" 
+              icon={<SearchOutlined />} 
+              onClick={handleSearch}
+            >
+              搜索
+            </Button>
+            <Button 
+              onClick={handleReset}
+            >
+              重置
+            </Button>
+          </Space>
         </div>
         
         <Table
           columns={columns}
-          dataSource={users}
+          dataSource={data}
           rowKey="id"
+          pagination={pagination}
           loading={loading}
-          pagination={{ pageSize: 10 }}
+          onChange={handleTableChange}
+          scroll={{ x: 1200 }}
         />
       </Card>
-      
+
+      {/* 添加/编辑用户模态框 */}
       <Modal
         title={editingUser ? '编辑用户' : '添加用户'}
-        open={modalVisible}
+        open={isModalVisible}
         onOk={handleModalOk}
         onCancel={handleModalCancel}
         confirmLoading={loading}
@@ -374,8 +481,8 @@ const UserManagement: React.FC = () => {
           >
             <Select placeholder="请选择状态">
               <Option value="active">活跃</Option>
-              <Option value="inactive">未激活</Option>
-              <Option value="locked">已锁定</Option>
+              <Option value="inactive">非活跃</Option>
+              <Option value="locked">锁定</Option>
             </Select>
           </Form.Item>
         </Form>
