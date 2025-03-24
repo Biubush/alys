@@ -39,6 +39,10 @@ yarn-error.log
 # 项目特定文件
 config.ini
 .env
+!.env.example
+.env.local
+.env.*.local
+!.env.*.example
 *.log
 aligo.json
 

@@ -5,6 +5,7 @@ from pathlib import Path
 from aligo import Aligo
 from app import cache, db
 from app.models import User, Log
+from app.core.config import settings
 
 class AligoService:
     """阿里云盘服务封装"""
@@ -18,6 +19,17 @@ class AligoService:
         # 确保二维码目录存在
         if not os.path.exists(self._qrcode_dir):
             os.makedirs(self._qrcode_dir, exist_ok=True)
+            
+        # 如果配置了刷新令牌，则尝试初始化系统级客户端
+        if settings.ALIYUNDRIVE_REFRESH_TOKEN:
+            try:
+                self._system_client = Aligo(refresh_token=settings.ALIYUNDRIVE_REFRESH_TOKEN, level=logging.INFO)
+                self._logger.info("系统级阿里云盘客户端初始化成功")
+            except Exception as e:
+                self._logger.error(f"系统级阿里云盘客户端初始化失败: {str(e)}")
+                self._system_client = None
+        else:
+            self._system_client = None
     
     def get_client(self, user_id):
         """获取用户的阿里云盘客户端

@@ -1,0 +1,35 @@
+# 阿里云盘同步系统依赖
+git+https://github.com/foyoux/aligo.git
+
+# Web框架
+fastapi
+flask
+flask-cors
+flask-sqlalchemy
+flask-migrate
+flask-jwt-extended
+flask-mail
+flask-caching
+uvicorn
+
+# 数据库
+sqlalchemy
+
+# 异步任务
+celery
+
+# 任务调度
+apscheduler
+
+# 身份验证和安全
+pyjwt
+
+# 文件处理和工具
+qrcode
+pathlib
+
+# 日志和工具
+logging
+
+# 其他工具
+python-dotenv 
