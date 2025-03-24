@@ -6,8 +6,11 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm install --quiet
 
-# 复制源代码
+# 复制源代码（确保使用正确的编码）
 COPY . .
+
+# 检查index.html是否正确（调试用）
+RUN cat index.html | head -n 1
 
 # 构建应用
 ARG NODE_ENV=production
